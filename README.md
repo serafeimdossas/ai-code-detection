@@ -66,7 +66,7 @@ Downloads the H-AIRosettaMP dataset from Hugging Face, filters for Python snippe
 ```bash
 python src/data/make_dataset.py \
   --dataset_name isThisYouLLM/H-AIRosettaMP \
-  --output_dir data/H-AIRosettaMP \
+  --output_dir data/raw/H-AIRosettaMP \
   --train_ratio 0.8
 ```
 
