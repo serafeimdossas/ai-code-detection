@@ -13,3 +13,10 @@ xgboost>=1.6.0
 
 # (Optional, for notebooks/EDA)
 matplotlib>=3.4.0
+
+# For embedding generation
+sentence-transformers>=2.2.2
+torch>=1.10.0
+
+# Numeric arrays
+numpy>=1.21.0

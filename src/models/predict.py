@@ -17,7 +17,7 @@ def parse_args():
         description="Predict human vs. AI code snippets using trained XGBoost model"
     )
     parser.add_argument(
-        "--model", type=str, default="models/xgb_baseline.json",
+        "--model", type=str, default="models/xgb/xgb_baseline.json",
         help="Path to the trained XGBoost model file"
     )
     parser.add_argument(
@@ -25,7 +25,7 @@ def parse_args():
         help="Path to the fitted TF-IDF vectorizer pickle"
     )
     parser.add_argument(
-        "--label_encoder", type=str, default="models/xgb_baseline_label_encoder.pkl",
+        "--label_encoder", type=str, default="models/xgb/xgb_baseline_label_encoder.pkl",
         help="Path to the LabelEncoder pickle"
     )
     parser.add_argument(

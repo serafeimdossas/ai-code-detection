@@ -10,9 +10,7 @@ data/raw/
 data/processed/
 
 # Model artifacts
-models/*.json
-models/*.model
-models/*_label_encoder.pkl
+/models/
 
 # folder structure notes
 folder_structure

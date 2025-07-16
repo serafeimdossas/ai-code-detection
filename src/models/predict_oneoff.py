@@ -5,8 +5,8 @@ from sklearn.preprocessing import LabelEncoder
 # 1) Load your artifacts
 vect = joblib.load("data/processed/tfidf_vectorizer.pkl")
 bst  = xgb.Booster()
-bst.load_model("models/xgb_baseline.json")
-le   = joblib.load("models/xgb_baseline_label_encoder.pkl")
+bst.load_model("models/xgb/xgb_baseline.json")
+le   = joblib.load("models/xgb/xgb_baseline_label_encoder.pkl")
 
 # 2) Your one-off code snippet
 snippet = '''
