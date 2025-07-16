@@ -166,9 +166,9 @@ models/xgb_emb/xgb_with_emb_label_encoder.pkl
 
 ```bash
 python src/models/predict.py \
-  --model models/xgb_emb/xgb_baseline.json \
+  --model models/xgb/xgb_baseline.json \
   --vectorizer data/processed/tfidf/tfidf_vectorizer.pkl \
-  --label_encoder models/xgb_emb/xgb_baseline_label_encoder.pkl \
+  --label_encoder models/xgb/xgb_baseline_label_encoder.pkl \
   --input examples_to_score.csv \
   --output predictions.csv
 ```
