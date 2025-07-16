@@ -1,0 +1,197 @@
+# AI Code Detection
+
+Creation of classifiers able to distinguish between human-written and AI-generated code.
+
+## Project Overview
+
+```
+project-root/
+├── data/
+│   ├── raw/                      # Raw CSV splits (train.csv, validation.csv, test.csv)
+│   └── processed/
+│       ├── tfidf/                # Precomputed TF-IDF vectors & label pickles
+│       └── embeddings/           # Precomputed embedding arrays & label files
+│
+├── notebooks/                    # Exploratory notebooks
+│   └── 01-exploration.ipynb
+│
+├── src/
+│   ├── data/
+│   │   ├──make_dataset.py        # Download and split HF dataset
+│   │   └──preprocess.py          # TF-IDF preprocessing & vectorization
+│   ├── features/
+│   │   └── build_embeddings.py   # Generate code embeddings via SentenceTransformer
+│   ├── models/
+│   │   ├── train_xgb.py          # Train XGBoost on TF-IDF features
+│   │   ├── train_xgb_emb.py      # Train XGBoost on embedding features
+│   │   ├── predict_oneoff.py     # Script used for prediction of one-off code snippet
+│   │   └── predict.py            # Script used for prediction of batches of code snippets
+│
+├── models/                       # Saved model artifacts
+│   ├── xgb/
+│   │   ├──xgb_baseline.json                        # Download and split HF dataset
+│   │   └──xgb_baseline_label_encoder.pkl           # TF-IDF preprocessing & vectorization
+│   ├── xgb_emb/
+│   │   ├──xgb_with_emb.json                        # Download and split HF dataset
+│   │   └──xgb_with_emb_label_encoder.pkl           # TF-IDF preprocessing & vectorization
+│
+├── requirements.txt
+└── README.md
+```
+
+## Setup
+
+1. **Clone & navigate**
+
+   ```bash
+   git clone https://github.com/serafeimdossas/ai-code-detection.git
+   cd ai-code-detection
+   ```
+2. **Create & activate a virtual environment**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. **Install dependencies**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## 1. Download and Split Dataset
+
+Downloads the H-AIRosettaMP dataset from Hugging Face, filters for Python snippets, and splits into **train/validation/test**.
+
+```bash
+python src/data/make_dataset.py \
+  --dataset_name isThisYouLLM/H-AIRosettaMP \
+  --output_dir data/H-AIRosettaMP \
+  --train_ratio 0.8
+```
+
+This produces:
+
+```
+data/raw/H-AIRosettaMP/
+├── train.csv
+├── validation.csv
+└── test.csv
+```
+
+## 2. Preprocess for TF-IDF
+
+Cleans code snippets, fits a TF-IDF vectorizer on the training split, transforms all splits, and saves feature-label pickles.
+
+```bash
+python src/data/preprocess.py \
+  --input_dir data/raw/H-AIRosettaMP \
+  --output_dir data/processed/tfidf \
+  --code_col code \
+  --label_col target \
+  --clean
+```
+
+Outputs under `data/processed/tfidf/`:
+
+```
+tfidf_vectorizer.pkl
+train.pkl
+validation.pkl
+test.pkl
+```
+
+## 3. Train XGBoost (TF-IDF)
+
+```bash
+python src/models/train_xgb.py \
+  --data_dir data/processed/tfidf \
+  --model_out models/xgb/xgb_baseline.json \
+  --n_estimators 500 \
+  --learning_rate 0.1 \
+  --max_depth 6 \
+  --early_stopping_rounds 20
+```
+
+This saves:
+
+```
+models/xgb/xgb_baseline.json
+models/xgb/xgb_baseline_label_encoder.pkl
+```
+
+## 4. Generate Embeddings
+
+Encodes code snippets using a pretrained SentenceTransformer model and saves `.npy` arrays.
+
+```bash
+pip install sentence-transformers torch
+python src/features/build_embeddings.py \
+  --input_dir data/raw/H-AIRosettaMP \
+  --output_dir data/processed/embeddings \
+  --model_name microsoft/codebert-base
+```
+
+Produces under `data/processed/embeddings/`:
+
+```
+train_emb.npy
+train_labels.npy
+validation_emb.npy
+validation_labels.npy
+test_emb.npy
+test_labels.npy
+```
+
+## 5. Train XGBoost (Embeddings)
+
+```bash
+python src/models/train_xgb_emb.py \
+  --data_dir data/processed/embeddings \
+  --model_out models/xgb_emb/xgb_with_emb.json \
+  --n_estimators 500 \
+  --learning_rate 0.1 \
+  --max_depth 6 \
+  --early_stopping_rounds 20
+```
+
+This saves:
+
+```
+models/xgb_emb/xgb_with_emb.json
+models/xgb_emb/xgb_with_emb_label_encoder.pkl
+```
+
+## 6. Inference (Batch)
+
+```bash
+python src/models/predict.py \
+  --model models/xgb_emb/xgb_baseline.json \
+  --vectorizer data/processed/tfidf/tfidf_vectorizer.pkl \
+  --label_encoder models/xgb_emb/xgb_baseline_label_encoder.pkl \
+  --input examples_to_score.csv \
+  --output predictions.csv
+```
+
+## 7. Inference (Single Snippet)
+
+Run interactively or create a small script:
+
+```python
+from pathlib import Path
+import joblib, xgboost as xgb
+# ... load vect, bst, le
+snippet = 'print("Hello, world!")'
+clean = ' '.join(snippet.split())
+X = vect.transform([clean])
+dm = xgb.DMatrix(X)
+proba = bst.predict(dm)[0]
+pred = le.inverse_transform([int(proba>=0.5)])[0]
+print(pred, proba)
+```
+
+---
+
+**Notes**
+
+* To experiment with other algorithms, add new scripts under `src/models/`.
