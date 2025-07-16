@@ -9,14 +9,10 @@ __pycache__/
 data/raw/
 data/processed/
 
-# Model artifacts (but not your source code!)
-# — ignore only the serialized models and encoders
+# Model artifacts
 models/*.json
 models/*.model
 models/*_label_encoder.pkl
-
-# If you had a folder src/models/, do NOT ignore it
-# (remove any line that says src/models/ or src/ in its entirety)
 
 # folder structure notes
 folder_structure
