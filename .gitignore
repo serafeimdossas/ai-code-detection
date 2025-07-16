@@ -1,0 +1,7 @@
+venv/
+data/processed/
+models/
+*.pyc
+__pycache__/
+folder_structure
+folder_structure_v2
