@@ -1,4 +1,4 @@
-# src/models/predict.py
+# src/models/xgb/predict.py
 
 import os
 import argparse
