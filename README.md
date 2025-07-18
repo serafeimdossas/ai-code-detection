@@ -17,23 +17,31 @@ project-root/
 │
 ├── src/
 │   ├── data/
-│   │   ├──make_dataset.py        # Download and split HF dataset
-│   │   └──preprocess.py          # TF-IDF preprocessing & vectorization
+│   │   ├── make_dataset.py       # Download and split HF dataset
+│   │   └── preprocess.py         # TF-IDF preprocessing & vectorization
 │   ├── features/
 │   │   └── build_embeddings.py   # Generate code embeddings via SentenceTransformer
-│   ├── models/
-│   │   ├── train_xgb.py          # Train XGBoost on TF-IDF features
-│   │   ├── train_xgb_emb.py      # Train XGBoost on embedding features
-│   │   ├── predict_oneoff.py     # Script used for prediction of one-off code snippet
-│   │   └── predict.py            # Script used for prediction of batches of code snippets
+│   └── models/
+│       ├── xgb/
+│       │   ├── train_xgb.py      # Train XGBoost on TF-IDF features
+│       │   └── predict_xgb.py    # Batch prediction with XGB baseline
+│       ├── xgb_emb/
+│       │   ├── train_xgb_emb.py  # Train XGBoost on embedding features
+│       │   └── predict_xgb_emb.py# Batch prediction with embedding-based XGB
+│       └── mlp_emb/
+│           ├── train_mlp_emb.py      # Train MLP on embedding features
+│           └── predict_mlp_emb.py    # Batch prediction with MLP model
 │
 ├── models/                       # Saved model artifacts
 │   ├── xgb/
-│   │   ├──xgb_baseline.json                        # Download and split HF dataset
-│   │   └──xgb_baseline_label_encoder.pkl           # TF-IDF preprocessing & vectorization
+│   │   ├── xgb_baseline.json
+│   │   └── xgb_baseline_label_encoder.pkl
 │   ├── xgb_emb/
-│   │   ├──xgb_with_emb.json                        # Download and split HF dataset
-│   │   └──xgb_with_emb_label_encoder.pkl           # TF-IDF preprocessing & vectorization
+│   │   ├── xgb_with_emb.json
+│   │   └── xgb_with_emb_label_encoder.pkl
+│   └── mlp_emb/
+│       ├── mlp_emb.pt            # Best MLP model weights
+│       └── mlp_emb_label_encoder.pkl
 │
 ├── requirements.txt
 └── README.md
@@ -104,7 +112,7 @@ test.pkl
 ## 3. Train XGBoost (TF-IDF)
 
 ```bash
-python src/models/train_xgb.py \
+python src/models/xgb/train_xgb.py \
   --data_dir data/processed/tfidf \
   --model_out models/xgb/xgb_baseline.json \
   --n_estimators 500 \
@@ -146,7 +154,7 @@ test_labels.npy
 ## 5. Train XGBoost (Embeddings)
 
 ```bash
-python src/models/train_xgb_emb.py \
+python src/models/xgb_emb/train_xgb_emb.py \
   --data_dir data/processed/embeddings \
   --model_out models/xgb_emb/xgb_with_emb.json \
   --n_estimators 500 \
@@ -165,12 +173,12 @@ models/xgb_emb/xgb_with_emb_label_encoder.pkl
 ## 6. Usage (Batch)
 
 ```bash
-python src/models/predict.py \
+python src/models/xgb/predict_xgb.py \
   --model models/xgb/xgb_baseline.json \
   --vectorizer data/processed/tfidf/tfidf_vectorizer.pkl \
   --label_encoder models/xgb/xgb_baseline_label_encoder.pkl \
   --input examples_to_score.csv \
-  --output predictions.csv
+  --output predictions_xgb.csv
 ```
 
 ## 7. Usage (Single Snippet)
@@ -185,4 +193,4 @@ python src/models/predict_oneoff.py
 
 **Notes**
 
-* To experiment with other algorithms, add new scripts under `src/models/`.
+* To experiment with other algorithms or embedding types, add new subfolders under `src/models/`.
