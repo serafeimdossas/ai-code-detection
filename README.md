@@ -184,7 +184,7 @@ python src/models/xgb/predict_xgb.py \
 ## 7. Usage (Single Snippet)
 
 ```python
-python src/models/predict_oneoff.py
+python src/models/xgb/predict_xgb_oneoff.py
 ```
 
 *Note: Adjust in code the selected model and the snippet to be tested*
