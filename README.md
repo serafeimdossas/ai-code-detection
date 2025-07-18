@@ -162,7 +162,7 @@ models/xgb_emb/xgb_with_emb.json
 models/xgb_emb/xgb_with_emb_label_encoder.pkl
 ```
 
-## 6. Inference (Batch)
+## 6. Usage (Batch)
 
 ```bash
 python src/models/predict.py \
@@ -173,22 +173,13 @@ python src/models/predict.py \
   --output predictions.csv
 ```
 
-## 7. Inference (Single Snippet)
-
-Run interactively or create a small script:
+## 7. Usage (Single Snippet)
 
 ```python
-from pathlib import Path
-import joblib, xgboost as xgb
-# ... load vect, bst, le
-snippet = 'print("Hello, world!")'
-clean = ' '.join(snippet.split())
-X = vect.transform([clean])
-dm = xgb.DMatrix(X)
-proba = bst.predict(dm)[0]
-pred = le.inverse_transform([int(proba>=0.5)])[0]
-print(pred, proba)
+python src/models/predict_oneoff.py
 ```
+
+*Note: Adjust in code the selected model and the snippet to be tested*
 
 ---
 
