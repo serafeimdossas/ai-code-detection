@@ -17,22 +17,22 @@ project-root/
 │
 ├── src/
 │   ├── data/
-│   │   ├── make_dataset.py       # Download and split HF dataset
-│   │   └── preprocess.py         # TF-IDF preprocessing & vectorization
+│   │   ├── make_dataset.py           # Download and split HF dataset
+│   │   └── preprocess.py             # TF-IDF preprocessing & vectorization
 │   ├── features/
-│   │   └── build_embeddings.py   # Generate code embeddings via SentenceTransformer
+│   │   └── build_embeddings.py       # Generate code embeddings via SentenceTransformer
 │   └── models/
 │       ├── xgb/
-│       │   ├── train_xgb.py      # Train XGBoost on TF-IDF features
-│       │   └── predict_xgb.py    # Batch prediction with XGB baseline
+│       │   ├── train_xgb.py          # Train XGBoost on TF-IDF features
+│       │   └── predict_xgb.py        # Batch prediction with XGB baseline
 │       ├── xgb_emb/
-│       │   ├── train_xgb_emb.py  # Train XGBoost on embedding features
-│       │   └── predict_xgb_emb.py# Batch prediction with embedding-based XGB
+│       │   ├── train_xgb_emb.py      # Train XGBoost on embedding features
+│       │   └── predict_xgb_emb.py    # Batch prediction with embedding-based XGB
 │       └── mlp_emb/
 │           ├── train_mlp_emb.py      # Train MLP on embedding features
 │           └── predict_mlp_emb.py    # Batch prediction with MLP model
 │
-├── models/                       # Saved model artifacts
+├── models/                           # Saved model artifacts
 │   ├── xgb/
 │   │   ├── xgb_baseline.json
 │   │   └── xgb_baseline_label_encoder.pkl
@@ -40,7 +40,7 @@ project-root/
 │   │   ├── xgb_with_emb.json
 │   │   └── xgb_with_emb_label_encoder.pkl
 │   └── mlp_emb/
-│       ├── mlp_emb.pt            # Best MLP model weights
+│       ├── mlp_emb.pt                # Best MLP model weights
 │       └── mlp_emb_label_encoder.pkl
 │
 ├── requirements.txt
