@@ -21,7 +21,7 @@ def parse_args():
         help="Path to the trained XGBoost model file"
     )
     parser.add_argument(
-        "--vectorizer", type=str, default="data/processed/tfidf_vectorizer.pkl",
+        "--vectorizer", type=str, default="data/processed/tfidf/tfidf_vectorizer.pkl",
         help="Path to the fitted TF-IDF vectorizer pickle"
     )
     parser.add_argument(

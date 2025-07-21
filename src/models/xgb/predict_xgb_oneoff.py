@@ -2,10 +2,9 @@
 
 import joblib
 import xgboost as xgb
-from sklearn.preprocessing import LabelEncoder
 
 # 1) Load your artifacts
-vect = joblib.load("data/processed/tfidf_vectorizer.pkl")
+vect = joblib.load("data/processed/tfidf/tfidf_vectorizer.pkl")
 bst  = xgb.Booster()
 bst.load_model("models/xgb/xgb_baseline.json")
 le   = joblib.load("models/xgb/xgb_baseline_label_encoder.pkl")

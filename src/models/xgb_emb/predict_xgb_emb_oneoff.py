@@ -2,16 +2,30 @@
 
 import joblib
 import xgboost as xgb
-from sklearn.preprocessing import LabelEncoder
 
 # 1) Load your artifacts
-vect = joblib.load("data/processed/tfidf_vectorizer.pkl")
+vect = joblib.load("data/processed/tfidf/tfidf_vectorizer.pkl")
 bst  = xgb.Booster()
-bst.load_model("models/xgb/xgb_baseline.json")
-le   = joblib.load("models/xgb/xgb_baseline_label_encoder.pkl")
+bst.load_model("models/xgb_emb/xgb_with_emb.json")
+le   = joblib.load("models/xgb_emb/xgb_with_emb_label_encoder.pkl")
 
 # 2) Your one-off code snippet
 snippet = '''
+def fibonacci(n):
+    """
+    Return the n-th Fibonacci number, where:
+      fibonacci(0) == 0
+      fibonacci(1) == 1
+
+    Raises:
+        ValueError: if n is negative.
+    """
+    if n < 0:
+        raise ValueError("n must be a non-negative integer")
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+    return a
 '''
 
 # 3) Clean & vectorize
