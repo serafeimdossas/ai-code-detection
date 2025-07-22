@@ -4,7 +4,10 @@ import os
 import argparse
 import joblib
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+import xgboost as xgb
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
 
 def clean_code(snippet: str) -> str:
     if not isinstance(snippet, str):
@@ -14,23 +17,23 @@ def clean_code(snippet: str) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Predict human vs. AI code snippets using trained XGBoost model"
+        description="Predict human vs. AI code snippets using embedding-based XGBoost model"
     )
     parser.add_argument(
         "--model", type=str, default="models/xgb_emb/xgb_with_emb.json",
         help="Path to the trained XGBoost model file"
     )
     parser.add_argument(
-        "--vectorizer", type=str, default="data/processed/tfidf/tfidf_vectorizer.pkl",
-        help="Path to the fitted TF-IDF vectorizer pickle"
-    )
-    parser.add_argument(
-        "--label_encoder", type=str, default="models/xgb_emb/xgb_with_emb_label_encoder.pkl",
+        "--encoder", type=str, default="models/xgb_emb/xgb_with_emb_label_encoder.pkl",
         help="Path to the LabelEncoder pickle"
     )
     parser.add_argument(
+        "--embed_model", type=str, default="microsoft/codebert-base",
+        help="SentenceTransformer model name or path for embeddings"
+    )
+    parser.add_argument(
         "--input", type=str, required=True,
-        help="Path to a CSV file with a column 'code' containing snippets to predict"
+        help="Path to a CSV file with a 'code' column containing snippets to predict"
     )
     parser.add_argument(
         "--output", type=str, default="predictions.csv",
@@ -41,38 +44,36 @@ def parse_args():
 
 def main():
     args = parse_args()
-    # Load artifacts
-    vect = joblib.load(args.vectorizer)
-    model = joblib.load(args.model) if args.model.endswith('.pkl') else None
-    
-    # if model is None:
-    # use xgboost native load
-    import xgboost as xgb
+    # Load label encoder and model
+    le = joblib.load(args.encoder)
     bst = xgb.Booster()
     bst.load_model(args.model)
-    
-    le = joblib.load(args.label_encoder)
+
+    # Initialize embedding model
+    embed_model = SentenceTransformer(args.embed_model)
 
     # Read input CSV
     df = pd.read_csv(args.input)
     if 'code' not in df.columns:
         raise KeyError("Input CSV must contain a 'code' column")
+
     # Clean
     df['code_clean'] = df['code'].apply(clean_code)
-    # Vectorize
-    X = vect.transform(df['code_clean'])
+
+    # Generate embeddings for all snippets
+    embeddings = embed_model.encode(
+        df['code_clean'].tolist(),
+        batch_size=32,
+        show_progress_bar=True
+    )
+    X = np.array(embeddings)
 
     # Predict
-    if model:
-        probas = model.predict_proba(X)[:, 1]
-        preds = model.predict(X)
-    else:
-        dmat = xgb.DMatrix(X)
-        probas = bst.predict(dmat)
-        preds = (probas >= 0.5).astype(int)
+    dmat = xgb.DMatrix(X)
+    probas = bst.predict(dmat)
+    preds = (probas >= 0.5).astype(int)
 
     # Map back to labels
-    df['pred_encoded'] = preds
     df['pred_label'] = le.inverse_transform(preds)
     df['prob_human'] = probas
 

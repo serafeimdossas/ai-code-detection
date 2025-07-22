@@ -13,7 +13,7 @@ def parse_args():
         description="Train an XGBoost classifier on TF-IDF features"
     )
     parser.add_argument(
-        "--data_dir", type=str, default="data/processed",
+        "--data_dir", type=str, default="data/processed/tfidf",
         help="Directory with train.pkl, validation.pkl, test.pkl"
     )
     parser.add_argument(
