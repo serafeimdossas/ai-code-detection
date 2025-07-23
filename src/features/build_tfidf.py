@@ -1,4 +1,4 @@
-# src/data/preprocess.py
+# src/features/build_tfidf.py
 
 import os
 import pandas as pd

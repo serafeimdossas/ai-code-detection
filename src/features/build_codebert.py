@@ -1,8 +1,7 @@
-# src/features/build_embeddings.py
+# src/features/build_codebert.py
 
 import os
 import argparse
-import joblib
 import numpy as np
 import pandas as pd
 from pathlib import Path

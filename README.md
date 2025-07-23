@@ -18,9 +18,9 @@ project-root/
 ├── src/
 │   ├── data/
 │   │   ├── make_dataset.py           # Download and split HF dataset
-│   │   └── preprocess.py             # TF-IDF preprocessing & vectorization
 │   ├── features/
-│   │   └── build_embeddings.py       # Generate code embeddings via SentenceTransformer
+│   │   ├── build_codebert.py         # Generate codebert embeddings
+│   │   └── build_tfidf.py            # Generate TF-IDF embeddings
 │   └── models/
 │       ├── xgb/
 │       │   ├── train_xgb.py          # Train XGBoost on TF-IDF features
@@ -92,7 +92,7 @@ data/raw/H-AIRosettaMP/
 Cleans code snippets, fits a TF-IDF vectorizer on the training split, transforms all splits, and saves feature-label pickles.
 
 ```bash
-python src/data/preprocess.py \
+python src/features/build_tfidf.py \
   --input_dir data/raw/H-AIRosettaMP \
   --output_dir data/processed/tfidf \
   --code_col code \
@@ -134,7 +134,7 @@ Encodes code snippets using a pretrained SentenceTransformer model and saves `.n
 
 ```bash
 pip install sentence-transformers torch
-python src/features/build_embeddings.py \
+python src/features/build_codebert.py \
   --input_dir data/raw/H-AIRosettaMP \
   --output_dir data/processed/{embeddings-type} \
   --model_name microsoft/codebert-base
