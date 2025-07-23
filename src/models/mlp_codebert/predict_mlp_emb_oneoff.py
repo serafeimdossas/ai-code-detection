@@ -1,4 +1,4 @@
-# src/models/mlp/predict_oneoff_mlp.py
+# src/models/mlp_codebert/predict_oneoff_mlp.py
 
 import joblib
 import torch
@@ -8,10 +8,10 @@ from train_mlp_emb import MLP
 
 # 1) Load your artifacts
 # Path to your MLP state dict
-state_dict = torch.load("models/mlp_emb/mlp_emb.pt")
+state_dict = torch.load("models/mlp_codebert/mlp_emb.pt")
 
 # Load label encoder
-le = joblib.load("models/mlp_emb/mlp_emb_label_encoder.pkl")
+le = joblib.load("models/mlp_codebert/mlp_emb_label_encoder.pkl")
 
 # 2) Initialize embedding model and MLP
 embed_model = SentenceTransformer("microsoft/codebert-base")

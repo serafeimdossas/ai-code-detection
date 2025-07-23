@@ -1,4 +1,4 @@
-# src/models/xgb_emb/predict_xgb_emb.py
+# src/models/xgb_codebert/predict_xgb_emb.py
 
 import os
 import argparse
@@ -20,11 +20,11 @@ def parse_args():
         description="Predict human vs. AI code snippets using embedding-based XGBoost model"
     )
     parser.add_argument(
-        "--model", type=str, default="models/xgb_emb/xgb_with_emb.json",
+        "--model", type=str, default="models/xgb_codebert/xgb_with_emb.json",
         help="Path to the trained XGBoost model file"
     )
     parser.add_argument(
-        "--encoder", type=str, default="models/xgb_emb/xgb_with_emb_label_encoder.pkl",
+        "--encoder", type=str, default="models/xgb_codebert/xgb_with_emb_label_encoder.pkl",
         help="Path to the LabelEncoder pickle"
     )
     parser.add_argument(

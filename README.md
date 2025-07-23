@@ -22,24 +22,24 @@ project-root/
 │   │   ├── build_codebert.py         # Generate codebert embeddings
 │   │   └── build_tfidf.py            # Generate TF-IDF embeddings
 │   └── models/
-│       ├── xgb/
+│       ├── xgb_tfidf/
 │       │   ├── train_xgb.py          # Train XGBoost on TF-IDF features
 │       │   └── predict_xgb.py        # Batch prediction with XGB baseline
-│       ├── xgb_emb/
-│       │   ├── train_xgb_emb.py      # Train XGBoost on embedding features
-│       │   └── predict_xgb_emb.py    # Batch prediction with embedding-based XGB
-│       └── mlp_emb/
-│           ├── train_mlp_emb.py      # Train MLP on embedding features
+│       ├── xgb_codebert/
+│       │   ├── train_xgb_emb.py      # Train XGBoost on codebert embedding features
+│       │   └── predict_xgb_emb.py    # Batch prediction with codebert embedding-based XGB
+│       └── mlp_codebert/
+│           ├── train_mlp_emb.py      # Train MLP on codebert embedding features
 │           └── predict_mlp_emb.py    # Batch prediction with MLP model
 │
 ├── models/                           # Saved model artifacts
-│   ├── xgb/
+│   ├── xgb_tfidf/
 │   │   ├── xgb_baseline.json
 │   │   └── xgb_baseline_label_encoder.pkl
-│   ├── xgb_emb/
+│   ├── xgb_codebert/
 │   │   ├── xgb_with_emb.json
 │   │   └── xgb_with_emb_label_encoder.pkl
-│   └── mlp_emb/
+│   └── mlp_codebert/
 │       ├── mlp_emb.pt                # Best MLP model weights
 │       └── mlp_emb_label_encoder.pkl
 │
@@ -112,9 +112,9 @@ test.pkl
 ## 3. Train XGBoost (TF-IDF)
 
 ```bash
-python src/models/xgb/train_xgb.py \
+python src/models/xgb_tfidf/train_xgb.py \
   --data_dir data/processed/tfidf \
-  --model_out models/xgb/xgb_baseline.json \
+  --model_out models/xgb_tfidf/xgb_baseline.json \
   --n_estimators 500 \
   --learning_rate 0.1 \
   --max_depth 6 \
@@ -124,8 +124,8 @@ python src/models/xgb/train_xgb.py \
 This saves:
 
 ```
-models/xgb/xgb_baseline.json
-models/xgb/xgb_baseline_label_encoder.pkl
+models/xgb_tfidf/xgb_baseline.json
+models/xgb_tfidf/xgb_baseline_label_encoder.pkl
 ```
 
 ## 4. Generate Embeddings
@@ -154,9 +154,9 @@ test_labels.npy
 ## 5. Train XGBoost (Embeddings)
 
 ```bash
-python src/models/xgb_emb/train_xgb_emb.py \
+python src/models/xgb_codebert/train_xgb_emb.py \
   --data_dir data/processed/{embeddings-type} \
-  --model_out models/xgb_emb/xgb_with_emb.json \
+  --model_out models/xgb_codebert/xgb_with_emb.json \
   --n_estimators 500 \
   --learning_rate 0.1 \
   --max_depth 6 \
@@ -166,17 +166,17 @@ python src/models/xgb_emb/train_xgb_emb.py \
 This saves:
 
 ```
-models/xgb_emb/xgb_with_emb.json
-models/xgb_emb/xgb_with_emb_label_encoder.pkl
+models/xgb_codebert/xgb_with_emb.json
+models/xgb_codebert/xgb_with_emb_label_encoder.pkl
 ```
 
 ## 6. Usage (Batch)
 
 ```bash
-python src/models/xgb/predict_xgb.py \
-  --model models/xgb/xgb_baseline.json \
+python src/models/xgb_tfidf/predict_xgb.py \
+  --model models/xgb_tfidf/xgb_baseline.json \
   --vectorizer data/processed/tfidf/tfidf_vectorizer.pkl \
-  --label_encoder models/xgb/xgb_baseline_label_encoder.pkl \
+  --label_encoder models/xgb_tfidf/xgb_baseline_label_encoder.pkl \
   --input examples_to_score.csv \
   --output predictions_xgb.csv
 ```
@@ -184,7 +184,7 @@ python src/models/xgb/predict_xgb.py \
 ## 7. Usage (Single Snippet)
 
 ```python
-python src/models/xgb/predict_xgb_oneoff.py
+python src/models/xgb_tfidf/predict_xgb_oneoff.py
 ```
 
 *Note: Adjust in code the selected model and the snippet to be tested*

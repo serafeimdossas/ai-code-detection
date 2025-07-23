@@ -1,4 +1,4 @@
-# src/models/xgb/train_xgb.py
+# src/models/xgb_tfidf/train_xgb.py
 
 import os
 import joblib
@@ -17,7 +17,7 @@ def parse_args():
         help="Directory with train.pkl, validation.pkl, test.pkl"
     )
     parser.add_argument(
-        "--model_out", type=str, default="models/xgb_baseline.json",
+        "--model_out", type=str, default="models/xgb_tfidf/xgb_baseline.json",
         help="Path to save the trained XGBoost model"
     )
     parser.add_argument(

@@ -1,4 +1,4 @@
-# src/models/mlp_emb/train_mlp_emb.py
+# src/models/mlp_codebert/train_mlp_emb.py
 
 import os
 import argparse
@@ -29,7 +29,7 @@ class MLP(nn.Module):
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--emb_dir", default="data/processed/codebert")
-    p.add_argument("--out", default="models/mlp_emb/mlp_emb.pt")
+    p.add_argument("--out", default="models/mlp_codebert/mlp_emb.pt")
     p.add_argument("--batch_size", type=int, default=64)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--epochs", type=int, default=10)

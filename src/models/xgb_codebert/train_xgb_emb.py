@@ -1,4 +1,4 @@
-# src/models/xgb_emb/train_xgb_emb.py
+# src/models/xgb_codebert/train_xgb_emb.py
 
 import os
 import joblib
@@ -18,7 +18,7 @@ def parse_args():
         help="Directory containing train_emb.npy, train_labels.npy, validation_emb.npy, validation_labels.npy, test_emb.npy, test_labels.npy"
     )
     parser.add_argument(
-        "--model_out", type=str, default="models/xgb_emb/xgb_with_emb.json",
+        "--model_out", type=str, default="models/xgb_codebert/xgb_with_emb.json",
         help="Output path for the trained XGBoost model"
     )
     parser.add_argument(

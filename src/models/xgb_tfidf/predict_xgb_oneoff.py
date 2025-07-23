@@ -1,4 +1,4 @@
-# src/models/xgb/predict_xgb_oneoff.py
+# src/models/xgb_tfidf/predict_xgb_oneoff.py
 
 import joblib
 import xgboost as xgb
@@ -6,8 +6,8 @@ import xgboost as xgb
 # 1) Load your artifacts
 vect = joblib.load("data/processed/tfidf/tfidf_vectorizer.pkl")
 bst  = xgb.Booster()
-bst.load_model("models/xgb/xgb_baseline.json")
-le   = joblib.load("models/xgb/xgb_baseline_label_encoder.pkl")
+bst.load_model("models/xgb_tfidf/xgb_baseline.json")
+le   = joblib.load("models/xgb_tfidf/xgb_baseline_label_encoder.pkl")
 
 # 2) Your one-off code snippet
 snippet = '''

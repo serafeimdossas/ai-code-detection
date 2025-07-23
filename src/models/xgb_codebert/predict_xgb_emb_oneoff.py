@@ -1,4 +1,4 @@
-# src/models/xgb_emb/predict_xgb_emb_oneoff.py
+# src/models/xgb_codebert/predict_xgb_emb_oneoff.py
 
 import joblib
 import xgboost as xgb
@@ -11,10 +11,10 @@ embed_model = SentenceTransformer("microsoft/codebert-base")
 
 # Load trained XGBoost booster
 bst = xgb.Booster()
-bst.load_model("models/xgb_emb/xgb_with_emb.json")
+bst.load_model("models/xgb_codebert/xgb_with_emb.json")
 
 # Load label encoder
-le = joblib.load("models/xgb_emb/xgb_with_emb_label_encoder.pkl")
+le = joblib.load("models/xgb_codebert/xgb_with_emb_label_encoder.pkl")
 
 # 2) Your one-off code snippet
 tn = '''
