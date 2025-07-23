@@ -10,7 +10,7 @@ project-root/
 │   ├── raw/                      # Raw CSV splits (train.csv, validation.csv, test.csv)
 │   └── processed/
 │       ├── tfidf/                # Precomputed TF-IDF vectors & label pickles
-│       └── embeddings/           # Precomputed embedding arrays & label files
+│       └── codebert/             # Precomputed embedding arrays & label files
 │
 ├── notebooks/                    # Exploratory notebooks
 │   └── 01-exploration.ipynb
@@ -136,11 +136,11 @@ Encodes code snippets using a pretrained SentenceTransformer model and saves `.n
 pip install sentence-transformers torch
 python src/features/build_embeddings.py \
   --input_dir data/raw/H-AIRosettaMP \
-  --output_dir data/processed/embeddings \
+  --output_dir data/processed/{embeddings-type} \
   --model_name microsoft/codebert-base
 ```
 
-Produces under `data/processed/embeddings/`:
+Produces under `data/processed/{embeddings-type}/`:
 
 ```
 train_emb.npy
@@ -155,7 +155,7 @@ test_labels.npy
 
 ```bash
 python src/models/xgb_emb/train_xgb_emb.py \
-  --data_dir data/processed/embeddings \
+  --data_dir data/processed/{embeddings-type} \
   --model_out models/xgb_emb/xgb_with_emb.json \
   --n_estimators 500 \
   --learning_rate 0.1 \

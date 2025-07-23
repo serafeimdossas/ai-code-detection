@@ -14,7 +14,7 @@ def parse_args():
         description="Train XGBoost classifier on precomputed embedding features"
     )
     parser.add_argument(
-        "--data_dir", type=str, default="data/processed/embeddings",
+        "--data_dir", type=str, default="data/processed/codebert",
         help="Directory containing train_emb.npy, train_labels.npy, validation_emb.npy, validation_labels.npy, test_emb.npy, test_labels.npy"
     )
     parser.add_argument(

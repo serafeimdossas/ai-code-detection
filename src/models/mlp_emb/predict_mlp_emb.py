@@ -11,7 +11,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--model",    required=True)  # e.g. models/mlp_emb/mlp_emb.pt
     p.add_argument("--encoder",  required=True)  # e.g. models/mlp_emb/mlp_emb_label_encoder.pkl
-    p.add_argument("--embeddings", required=True) # e.g. data/processed/embeddings/test_emb.npy
+    p.add_argument("--embeddings", required=True) # e.g. data/processed/codebert/test_emb.npy
     p.add_argument("--labels",   required=False) # optional, for evaluation
     p.add_argument("--out",      default="mlp_predictions.csv")
     return p.parse_args()

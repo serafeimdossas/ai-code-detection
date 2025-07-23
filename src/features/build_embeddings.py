@@ -17,7 +17,7 @@ def parse_args():
         help="Directory containing train.csv, validation.csv, test.csv"
     )
     parser.add_argument(
-        "--output_dir", type=str, default="data/processed/embeddings",
+        "--output_dir", type=str, default="data/processed/codebert",
         help="Directory to save embedding arrays and label files"
     )
     parser.add_argument(
