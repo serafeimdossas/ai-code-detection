@@ -12,6 +12,9 @@ data/processed/
 # Model artifacts
 /models/
 
-# folder structure notes
+# Output folder 
+output/
+
+# Folder structure notes
 folder_structure
 folder_structure_v2
