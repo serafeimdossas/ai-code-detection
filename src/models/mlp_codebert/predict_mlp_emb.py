@@ -1,5 +1,6 @@
 # src/models/mlp_codebert/predict_mlp.py
 
+import os
 import argparse
 import torch
 import numpy as np
@@ -8,16 +9,38 @@ import pandas as pd
 from train_mlp_emb import MLP 
 
 def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--model",    required=True)  # e.g. models/mlp_codebert/mlp_emb.pt
-    p.add_argument("--encoder",  required=True)  # e.g. models/mlp_codebert/mlp_emb_label_encoder.pkl
-    p.add_argument("--embeddings", required=True) # e.g. data/processed/codebert/test_emb.npy
-    p.add_argument("--labels",   required=False) # optional, for evaluation
-    p.add_argument("--out",      default="mlp_predictions.csv")
-    return p.parse_args()
+    parser = argparse.ArgumentParser(
+        description="Predict human vs. AI code snippets using embedding-based MLP model"
+    )
+    parser.add_argument(
+        "--model", type=str, default="models/mlp_codebert/mlp_emb.pt",
+        help="Path to the trained MLP model file"
+    )
+    parser.add_argument(
+        "--encoder", type=str, default="models/mlp_codebert/mlp_emb_label_encoder.pkl",
+        help="Path to the LabelEncoder pickle"
+    )
+    parser.add_argument(
+        "--embeddings", type=str, default="data/processed/codebert/test_emb.npy",
+        help="SentenceTransformer model name or path for embeddings"
+    )
+    parser.add_argument(
+        "--labels", type=str, default="data/processed/codebert/test_labels.npy",
+        help="Path to true labels."
+    )
+    parser.add_argument(
+        "--out", type=str, default="output/mlp_codebert_predictions.csv",
+        help="Path to write predictions CSV"
+    )
+    return parser.parse_args()
 
 def main():
     args = parse_args()
+    
+    # Ensure output directory exists
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     
     # Load
     state_dict = torch.load(args.model)
@@ -41,6 +64,7 @@ def main():
     df = pd.DataFrame({"pred": labels, "prob_human": probs})
     if args.labels:
         df["true"] = np.load(args.labels, allow_pickle=True)
+        df["correct"] = np.where(df['pred'] == df['true'], 'CorrectPred', 'IncorrectPred')
     df.to_csv(args.out, index=False)
     print(f"Wrote {args.out}")
 
