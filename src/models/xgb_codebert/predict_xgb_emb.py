@@ -32,11 +32,11 @@ def parse_args():
         help="SentenceTransformer model name or path for embeddings"
     )
     parser.add_argument(
-        "--input", type=str, required=True,
+        "--input", type=str, default="data/raw/H-AIRosettaMP/test.csv",
         help="Path to a CSV file with a 'code' column containing snippets to predict"
     )
     parser.add_argument(
-        "--output", type=str, default="predictions.csv",
+        "--output", type=str, default="output/xgb_codebert_predictions.csv",
         help="Path to write predictions CSV"
     )
     return parser.parse_args()
@@ -44,6 +44,12 @@ def parse_args():
 
 def main():
     args = parse_args()
+    
+    # Ensure output directory exists
+    out_dir = os.path.dirname(args.output)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    
     # Load label encoder and model
     le = joblib.load(args.encoder)
     bst = xgb.Booster()
@@ -76,9 +82,14 @@ def main():
     # Map back to labels
     df['pred_label'] = le.inverse_transform(preds)
     df['prob_human'] = probas
+    
+    # Include ground truth if available and flag correctness
+    if 'target' in df.columns:
+        df['true_label'] = df['target']
+        df['correct'] = np.where(df['pred_label'] == df['true_label'], 'CorrectPred', 'IncorrectPred')
 
     # Save
-    df[['code', 'pred_label', 'prob_human']].to_csv(args.output, index=False)
+    df[['code', 'pred_label', 'prob_human'] + ([ 'true_label', 'correct'] if 'target' in df.columns else [])].to_csv(args.output, index=False)
     print(f"Wrote predictions to {args.output}")
 
 if __name__ == '__main__':
