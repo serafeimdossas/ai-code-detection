@@ -72,10 +72,7 @@ project-root/
 Downloads the H-AIRosettaMP dataset from Hugging Face, filters for Python snippets, and splits into **train/validation/test**.
 
 ```bash
-python src/data/make_dataset.py \
-  --dataset_name isThisYouLLM/H-AIRosettaMP \
-  --output_dir data/raw/H-AIRosettaMP \
-  --train_ratio 0.8
+python src/data/make_dataset.py
 ```
 
 This produces:
@@ -92,12 +89,7 @@ data/raw/H-AIRosettaMP/
 Cleans code snippets, fits a TF-IDF vectorizer on the training split, transforms all splits, and saves feature-label pickles.
 
 ```bash
-python src/features/build_tfidf.py \
-  --input_dir data/raw/H-AIRosettaMP \
-  --output_dir data/processed/tfidf \
-  --code_col code \
-  --label_col target \
-  --clean
+python src/features/build_tfidf.py
 ```
 
 Outputs under `data/processed/tfidf/`:

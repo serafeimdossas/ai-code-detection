@@ -9,7 +9,7 @@ import joblib
 
 def preprocess_and_vectorize(
     input_dir: str = "data/raw/H-AIRosettaMP",
-    output_dir: str = "data/processed",
+    output_dir: str = "data/processed/tfidf",
     code_col: str = "code",
     label_col: str = "target",
     ngram_range=(3,6),
