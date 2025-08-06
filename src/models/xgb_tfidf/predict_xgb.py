@@ -91,7 +91,7 @@ def main():
         df['correct'] = np.where(df['pred_label'] == df['true_label'], 'CorrectPred', 'IncorrectPred')
 
     # Save
-    df[['code', 'pred_label', 'prob_human'] + ([ 'true_label', 'correct'] if 'target' in df.columns else [])].to_csv(args.output, index=False)
+    df[['task_name', 'pred_label', 'prob_human'] + ([ 'true_label', 'correct'] if 'target' in df.columns else [])].to_csv(args.output, index=False)
     print(f"Wrote predictions to {args.output}")
 
 if __name__ == '__main__':
