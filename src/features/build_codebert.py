@@ -12,7 +12,7 @@ def parse_args():
         description="Generate embeddings for code snippets using a pretrained model"
     )
     parser.add_argument(
-        "--input_dir", type=str, default="data/raw/H-AIRosettaMP",
+        "--input_dir", type=str, default="data/raw",
         help="Directory containing train.csv, validation.csv, test.csv"
     )
     parser.add_argument(
@@ -57,7 +57,7 @@ def main():
 
         # Save embeddings and labels
         np.save(os.path.join(args.output_dir, f"{split}_emb.npy"), embeddings)
-        np.save(os.path.join(args.output_dir, f"{split}_labels.npy"), df['target'].values) # type: ignore
+        np.save(os.path.join(args.output_dir, f"{split}_labels.npy"), df['label'].values) # type: ignore
         print(f"Saved {split} embeddings: {embeddings.shape}")
 
     print("Embedding generation complete.")
