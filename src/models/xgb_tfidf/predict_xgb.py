@@ -30,7 +30,7 @@ def parse_args():
         help="Path to the LabelEncoder pickle"
     )
     parser.add_argument(
-        "--input", type=str, default="data/raw/H-AIRosettaMP/test.csv",
+        "--input", type=str, default="data/raw/test.csv",
         help="Path to a CSV file with a column 'code' containing snippets to predict"
     )
     parser.add_argument(
@@ -86,12 +86,12 @@ def main():
     df['prob_human'] = probas
     
     # Include ground truth if available and flag correctness
-    if 'target' in df.columns:
-        df['true_label'] = df['target']
+    if 'label' in df.columns:
+        df['true_label'] = df['label']
         df['correct'] = np.where(df['pred_label'] == df['true_label'], 'CorrectPred', 'IncorrectPred')
 
     # Save
-    df[['task_name', 'pred_label', 'prob_human'] + ([ 'true_label', 'correct'] if 'target' in df.columns else [])].to_csv(args.output, index=False)
+    df[['task_name', 'pred_label', 'prob_human'] + ([ 'true_label', 'correct'] if 'label' in df.columns else [])].to_csv(args.output, index=False)
     print(f"Wrote predictions to {args.output}")
 
 if __name__ == '__main__':

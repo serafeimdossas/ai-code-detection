@@ -32,7 +32,7 @@ def parse_args():
         help="SentenceTransformer model name or path for embeddings"
     )
     parser.add_argument(
-        "--input", type=str, default="data/raw/H-AIRosettaMP/test.csv",
+        "--input", type=str, default="data/raw/test.csv",
         help="Path to a CSV file with a 'code' column containing snippets to predict"
     )
     parser.add_argument(
