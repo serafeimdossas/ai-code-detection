@@ -1,70 +1,47 @@
 # src/data/make_dataset.py
 
-import os
 from pathlib import Path
-from datasets import load_dataset, DatasetDict
+from datasets import load_dataset
+from sklearn.model_selection import train_test_split
 
 
 def download_and_split(
-    dataset_name: str = "isThisYouLLM/H-AIRosettaMP",
-    output_dir: str = "data/raw//H-AIRosettaMP",
-    train_ratio: float = 0.80,
-    seed: int = 42
+    dataset_name: str = "serafeimdossas/ai-code-detection",
+    output_dir: str = "data/raw/",
 ):
     """
-    Downloads the H-AIRosettaMP dataset, filters to only Python entries,
-    then splits into train/validation/test and writes each to CSV under output_dir.
+    Downloads the serafeimdossas/ai-code-detection dataset,
+    and splits into train/validation/test and writes each to CSV under output_dir.
 
-    Only rows where 'language' is 'Python' are kept.
     Splitting ratios: train, validation, test = 80%, 10%, 10% by default.
     """
 
     # Ensure output directory exists
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    # Load entire dataset (merge all splits if needed)
-    ds_all = load_dataset(dataset_name)
+    # Load dataset from Hugging Face
+    dataset = load_dataset(dataset_name)
 
-    if isinstance(ds_all, DatasetDict):
-        # concatenate all splits into one
-        keys = list(ds_all.keys())
-        ds = ds_all[keys[0]]
-        for split in keys[1:]:
-            ds = ds.concatenate(ds_all[split]) # type: ignore
-    else:
-        ds = ds_all
+    # Let's assume your dataset is already processed into a single split
+    df = dataset["train"].to_pandas() # type: ignore
 
-    # Filter to only Python-language snippets
-    ds = ds.filter(lambda example: example.get('language_name', '') == 'Python')
+    # Step 1: Split into 80% train and 20% temp
+    train_df, temp_df = train_test_split(
+        df, test_size=0.2, random_state=42, shuffle=True, stratify=df["label"] # type: ignore
+    )
 
-    # Calculate test ratio (10%) (10%)
-    test_ratio = (1.0 - train_ratio) / 2
+    # Step 2: Split temp into 50% validation, 50% test (10% each of total)
+    val_df, test_df = train_test_split(
+        temp_df, test_size=0.5, random_state=42, shuffle=True, stratify=temp_df["label"]
+    )
 
-    # Split off test set
-    split1 = ds.train_test_split(test_size=test_ratio, seed=seed) # type: ignore
-    remainder = split1['train']
-    test_set = split1['test']
+    # Save as CSV
+    train_df.to_csv(f"{output_dir}/train.csv", index=False)
+    val_df.to_csv(f"{output_dir}/validation.csv", index=False)
+    test_df.to_csv(f"{output_dir}/test.csv", index=False)
 
-    # Split remainder into train and validation
-    # validation ratio relative to remainder = (1 - train_ratio) / (train_ratio + (1 - train_ratio)) = test_ratio * 2?
-    val_ratio = test_ratio
-    split2 = remainder.train_test_split(test_size=val_ratio, seed=seed)
-    train_set = split2['train']
-    val_set = split2['test']
-
-    splits = {
-        'train': train_set,
-        'validation': val_set,
-        'test': test_set
-    }
-
-    # Save splits to CSV
-    for name, dataset in splits.items():
-        out_path = os.path.join(output_dir, f"{name}.csv")
-        print(f"Writing {name} ({len(dataset)} samples) to {out_path}")
-        dataset.to_csv(out_path, index=False)
-
-    print("Dataset download, filter, and splitting complete.")
+    # Print confirmation 
+    print("Dataset download and splitting complete.")
 
 
 if __name__ == '__main__':
