@@ -69,7 +69,7 @@ project-root/
 
 ## 1. Download and Split Dataset
 
-Downloads the H-AIRosettaMP dataset from Hugging Face, filters for Python snippets, and splits into **train/validation/test**.
+Downloads the **serafeimdossas/ai-code-detection** dataset from Hugging Face and splits into **train/validation/test**.
 
 ```bash
 python src/data/make_dataset.py
@@ -78,7 +78,7 @@ python src/data/make_dataset.py
 This produces:
 
 ```
-data/raw/H-AIRosettaMP/
+data/raw/
 ├── train.csv
 ├── validation.csv
 └── test.csv
@@ -127,7 +127,7 @@ Encodes code snippets using a pretrained SentenceTransformer model and saves `.n
 ```bash
 pip install sentence-transformers torch
 python src/features/build_codebert.py \
-  --input_dir data/raw/H-AIRosettaMP \
+  --input_dir data/raw \
   --output_dir data/processed/{embeddings-type} \
   --model_name microsoft/codebert-base
 ```
