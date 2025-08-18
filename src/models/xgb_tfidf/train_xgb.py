@@ -9,7 +9,7 @@ from datetime import datetime
 from xgboost import XGBClassifier
 from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from scipy.sparse import hstack, csr_matrix
+from scipy.sparse import hstack, csr_matrix, issparse, isspmatrix_csr
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train an XGBoost classifier on TF-IDF features")
@@ -34,7 +34,6 @@ def ensure_csr(*mats):
     - If a matrix is sparse but not CSR it will be converted to CSR.
     - If it's already CSR, it is left unchanged.
     """
-    from scipy.sparse import csr_matrix, issparse, isspmatrix_csr
     out = []
     for M in mats:
         if not issparse(M):
@@ -89,6 +88,16 @@ def main():
     train_feats_path = os.path.join(args.features_dir, "train_dense_features.pkl")
     val_feats_path   = os.path.join(args.features_dir, "validation_dense_features.pkl")
     test_feats_path  = os.path.join(args.features_dir, "test_dense_features.pkl")
+
+    # Load dense feature names for saving later
+    dense_feature_names = joblib.load(train_feats_path).columns.tolist()
+
+    # Save dense feature names to a JSON file
+    feat_names_out = os.path.splitext(args.model_out)[0] + "_dense_features.json"
+    with open(feat_names_out, "w") as f:
+        json.dump(dense_feature_names, f)
+
+    print(f"Dense feature names saved to {feat_names_out}")
 
     X_train, scaler = add_dense_feats(X_train_tfidf, train_feats_path, fit=True)
     X_val,   _      = add_dense_feats(X_val_tfidf,   val_feats_path,   scaler=scaler, fit=False)
