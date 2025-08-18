@@ -131,11 +131,11 @@ python src/models/xgb_tfidf/train_xgb.py
 This saves:
 
 ```
-models/xgb_tfidf/xgb_code_features_baseline_dense_features.json
-models/xgb_tfidf/xgb_code_features_baseline_label_encoder.pkl
-models/xgb_tfidf/xgb_code_features_baseline_metrics_{timestamp}.json
-models/xgb_tfidf/xgb_code_features_baseline_scaler.pkl
-models/xgb_tfidf/xgb_code_features_baseline.json
+models/xgb_tfidf/xgb_tfidf_dense_features.json
+models/xgb_tfidf/xgb_tfidf_label_encoder.pkl
+models/xgb_tfidf/xgb_tfidf_metrics_{timestamp}.json
+models/xgb_tfidf/xgb_tfidf_scaler.pkl
+models/xgb_tfidf/xgb_tfidf.json
 ```
 
 ## 5. Train XGBoost (CodeBERT Embeddings)
@@ -156,7 +156,7 @@ models/xgb_codebert/xgb_with_emb_label_encoder.pkl
 ```bash
 python src/models/xgb_tfidf/predict_xgb.py \
   --input examples_to_score.csv \
-  --output predictions_xgb.csv
+  --output xgb_tfidf_predictions.csv
 ```
 
 ## 7. Predictions (Single Snippet)

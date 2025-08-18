@@ -15,7 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train an XGBoost classifier on TF-IDF features")
     parser.add_argument("--data_dir", type=str, default="data/processed/tfidf", help="Directory with train.pkl, validation.pkl, test.pkl")
     parser.add_argument("--features_dir", type=str, default="data/processed/features", help="Directory with *_dense_features.pkl built by build_code_features.py")
-    parser.add_argument("--model_out", type=str, default="models/xgb_tfidf/xgb_code_features_baseline.json", help="Path to save the trained XGBoost model")
+    parser.add_argument("--model_out", type=str, default="models/xgb_tfidf/xgb_tfidf.json", help="Path to save the trained XGBoost model")
     parser.add_argument("--n_estimators", type=int, default=300)
     parser.add_argument("--learning_rate", type=float, default=0.1)
     parser.add_argument("--max_depth", type=int, default=4)

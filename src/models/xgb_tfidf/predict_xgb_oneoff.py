@@ -8,10 +8,10 @@ from scipy.sparse import hstack, csr_matrix
 from src.features.python_code_features import python_code_features
 
 VECT_PATH   = "data/processed/tfidf/tfidf_vectorizer.pkl"
-MODEL_PATH  = "models/xgb_tfidf/xgb_code_features_baseline.json"
-ENC_PATH    = "models/xgb_tfidf/xgb_code_features_baseline_label_encoder.pkl"
-SCALER_PATH = "models/xgb_tfidf/xgb_code_features_baseline_scaler.pkl"
-DENSE_NAMES = "models/xgb_tfidf/xgb_code_features_baseline_dense_features.json"
+MODEL_PATH  = "models/xgb_tfidf/xgb_tfidf.json"
+ENC_PATH    = "models/xgb_tfidf/xgb_tfidf_label_encoder.pkl"
+SCALER_PATH = "models/xgb_tfidf/xgb_tfidf_scaler.pkl"
+DENSE_NAMES = "models/xgb_tfidf/xgb_tfidf_dense_features.json"
 
 # Cleaning functions
 

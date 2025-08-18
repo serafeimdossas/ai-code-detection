@@ -11,7 +11,7 @@ from scipy.sparse import hstack, csr_matrix
 def parse_args():
     parser = argparse.ArgumentParser(description="Predict human vs. AI code snippets using trained XGBoost model")
     parser.add_argument(
-        "--model", type=str, default="models/xgb_tfidf/xgb_code_features_baseline.json", 
+        "--model", type=str, default="models/xgb_tfidf/xgb_tfidf.json", 
         help="Path to the trained XGBoost model file"
     )
     parser.add_argument(
@@ -19,15 +19,15 @@ def parse_args():
         help="Path to the fitted TF-IDF vectorizer pickle"
     )
     parser.add_argument(
-        "--label_encoder", type=str, default="models/xgb_tfidf/xgb_code_features_baseline_label_encoder.pkl", 
+        "--label_encoder", type=str, default="models/xgb_tfidf/xgb_tfidf_label_encoder.pkl", 
         help="Path to the LabelEncoder pickle"
     )
     parser.add_argument(
-        "--scaler", type=str, default="models/xgb_tfidf/xgb_code_features_baseline_scaler.pkl", 
+        "--scaler", type=str, default="models/xgb_tfidf/xgb_tfidf_scaler.pkl", 
         help="StandardScaler for dense features"
     )
     parser.add_argument(
-        "--dense_feature_names", type=str, default="models/xgb_tfidf/xgb_code_features_baseline_dense_features.json", 
+        "--dense_feature_names", type=str, default="models/xgb_tfidf/xgb_tfidf_dense_features.json", 
         help="JSON list with dense feature columns used at training (ordered)"
     )
     parser.add_argument(
@@ -35,7 +35,7 @@ def parse_args():
         help="Path to a CSV file with a column 'code' containing snippets to predict"
     )
     parser.add_argument(
-        "--output", type=str, default="output/xgb_tfidf_code_features_predictions.csv", 
+        "--output", type=str, default="output/xgb_tfidf_predictions.csv", 
         help="Path to write predictions CSV"
     )
     return parser.parse_args()
