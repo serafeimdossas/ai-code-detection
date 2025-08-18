@@ -111,18 +111,23 @@ pip install sentence-transformers torch
 python src/features/build_codebert.py
 ```
 
-Produces under `data/processed/codebert/`:
+## 4. Extract Python Code Features 
 
-```
-train_emb.npy
-train_labels.npy
-validation_emb.npy
-validation_labels.npy
-test_emb.npy
-test_labels.npy
+Extracts code and structural metrics from snippets, scales them, and saves as .pkl feature files.
+
+```bash
+python src/features/build_code_features.py
 ```
 
-## 4. Train XGBoost (TF-IDF)
+Produces under `data/processed/features/`:
+
+```
+test_dense_features.pkl
+train_dense_features.pkl
+validation_dense_features.pkl
+```
+
+## 5. Train XGBoost (TF-IDF)
 
 ```bash
 python src/models/xgb_tfidf/train_xgb.py
@@ -138,7 +143,7 @@ models/xgb_tfidf/xgb_tfidf_scaler.pkl
 models/xgb_tfidf/xgb_tfidf.json
 ```
 
-## 5. Train XGBoost (CodeBERT Embeddings)
+## 6. Train XGBoost (CodeBERT Embeddings)
 
 ```bash
 python src/models/xgb_codebert/train_xgb_emb.py
@@ -151,7 +156,7 @@ models/xgb_codebert/xgb_with_emb.json
 models/xgb_codebert/xgb_with_emb_label_encoder.pkl
 ```
 
-## 6. Predictions (Batch)
+## 7a. Predictions (Batch)
 
 ```bash
 python src/models/xgb_tfidf/predict_xgb.py \
@@ -159,13 +164,13 @@ python src/models/xgb_tfidf/predict_xgb.py \
   --output xgb_tfidf_predictions.csv
 ```
 
-## 7. Predictions (Single Snippet)
+## 7b. Predictions (Single Snippet)
 
 ```python
 python src/models/xgb_tfidf/predict_xgb_oneoff.py
 ```
 
-*Note: Adjust in code the selected model and the snippet to be tested*
+*Note: Adjust in code the selected model and the snippet to be used for predictions*
 
 ---
 
