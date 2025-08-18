@@ -10,6 +10,7 @@ project-root/
 │   ├── raw/                      # Raw CSV splits (train.csv, validation.csv, test.csv)
 │   └── processed/
 │       ├── tfidf/                # Precomputed TF-IDF vectors & label pickles
+│       ├── features/             # Extracted Python code features 
 │       └── codebert/             # Precomputed embedding arrays & label files
 │
 ├── notebooks/                    # Exploratory notebooks
@@ -19,29 +20,29 @@ project-root/
 │   ├── data/
 │   │   ├── make_dataset.py           # Download and split HF dataset
 │   ├── features/
+│   │   ├── build_code_features.py    # Generate Python code features
 │   │   ├── build_codebert.py         # Generate codebert embeddings
-│   │   └── build_tfidf.py            # Generate TF-IDF embeddings
+│   │   ├── build_tfidf.py            # Generate TF-IDF embeddings
+│   │   ├── FEATURES_REFERENCE.md     # MD file listing included code features
+│   │   └── python_code_features.py   # Includes methods for code features extraction
 │   └── models/
 │       ├── xgb_tfidf/
-│       │   ├── train_xgb.py          # Train XGBoost on TF-IDF features
-│       │   └── predict_xgb.py        # Batch prediction with XGB baseline
+│       │   ├── train_xgb.py          # Train XGBoost on TF-IDF features using also Python code features
+│       │   ├── predict_xgb.py        # Batch prediction with XGB - TF-IDF trained model
+│       │   └── predict_xgb.py        # One off prediction with XGB - TF-IDF trained model
 │       ├── xgb_codebert/
 │       │   ├── train_xgb_emb.py      # Train XGBoost on codebert embedding features
-│       │   └── predict_xgb_emb.py    # Batch prediction with codebert embedding-based XGB
+│       │   ├── predict_xgb_emb.py    # Batch prediction with codebert embedding-based XGB
+│       │   └── predict_xgb_emb.py    # One off prediction with codebert embedding-based XGB
 │       └── mlp_codebert/
 │           ├── train_mlp_emb.py      # Train MLP on codebert embedding features
-│           └── predict_mlp_emb.py    # Batch prediction with MLP model
+│           ├── predict_mlp_emb.py    # Batch prediction with MLP model
+│           └── predict_mlp_emb.py    # One off prediction with MLP model
 │
-├── models/                           # Saved model artifacts
+├── models/                           # Saved artifacts for each model
 │   ├── xgb_tfidf/
-│   │   ├── xgb_baseline.json
-│   │   └── xgb_baseline_label_encoder.pkl
 │   ├── xgb_codebert/
-│   │   ├── xgb_with_emb.json
-│   │   └── xgb_with_emb_label_encoder.pkl
 │   └── mlp_codebert/
-│       ├── mlp_emb.pt                # Best MLP model weights
-│       └── mlp_emb_label_encoder.pkl
 │
 ├── requirements.txt
 └── README.md
@@ -101,58 +102,51 @@ validation.pkl
 test.pkl
 ```
 
-## 3. Train XGBoost (TF-IDF)
-
-```bash
-python src/models/xgb_tfidf/train_xgb.py \
-  --data_dir data/processed/tfidf \
-  --model_out models/xgb_tfidf/xgb_baseline.json \
-  --n_estimators 500 \
-  --learning_rate 0.1 \
-  --max_depth 6 \
-  --early_stopping_rounds 20
-```
-
-This saves:
-
-```
-models/xgb_tfidf/xgb_baseline.json
-models/xgb_tfidf/xgb_baseline_label_encoder.pkl
-```
-
-## 4. Generate Embeddings
+## 3. Generate CodeBERT Embeddings
 
 Encodes code snippets using a pretrained SentenceTransformer model and saves `.npy` arrays.
 
 ```bash
 pip install sentence-transformers torch
-python src/features/build_codebert.py \
-  --input_dir data/raw \
-  --output_dir data/processed/{embeddings-type} \
-  --model_name microsoft/codebert-base
+python src/features/build_codebert.py
 ```
 
-Produces under `data/processed/{embeddings-type}/`:
+## 4. Extract Python Code Features 
 
-```
-train_emb.npy
-train_labels.npy
-validation_emb.npy
-validation_labels.npy
-test_emb.npy
-test_labels.npy
-```
-
-## 5. Train XGBoost (Embeddings)
+Extracts code and structural metrics from snippets, scales them, and saves as .pkl feature files.
 
 ```bash
-python src/models/xgb_codebert/train_xgb_emb.py \
-  --data_dir data/processed/{embeddings-type} \
-  --model_out models/xgb_codebert/xgb_with_emb.json \
-  --n_estimators 500 \
-  --learning_rate 0.1 \
-  --max_depth 6 \
-  --early_stopping_rounds 20
+python src/features/build_code_features.py
+```
+
+Produces under `data/processed/features/`:
+
+```
+test_dense_features.pkl
+train_dense_features.pkl
+validation_dense_features.pkl
+```
+
+## 5. Train XGBoost (TF-IDF)
+
+```bash
+python src/models/xgb_tfidf/train_xgb.py
+```
+
+This saves:
+
+```
+models/xgb_tfidf/xgb_tfidf_dense_features.json
+models/xgb_tfidf/xgb_tfidf_label_encoder.pkl
+models/xgb_tfidf/xgb_tfidf_metrics_{timestamp}.json
+models/xgb_tfidf/xgb_tfidf_scaler.pkl
+models/xgb_tfidf/xgb_tfidf.json
+```
+
+## 6. Train XGBoost (CodeBERT Embeddings)
+
+```bash
+python src/models/xgb_codebert/train_xgb_emb.py
 ```
 
 This saves:
@@ -162,24 +156,21 @@ models/xgb_codebert/xgb_with_emb.json
 models/xgb_codebert/xgb_with_emb_label_encoder.pkl
 ```
 
-## 6. Usage (Batch)
+## 7a. Predictions (Batch)
 
 ```bash
 python src/models/xgb_tfidf/predict_xgb.py \
-  --model models/xgb_tfidf/xgb_baseline.json \
-  --vectorizer data/processed/tfidf/tfidf_vectorizer.pkl \
-  --label_encoder models/xgb_tfidf/xgb_baseline_label_encoder.pkl \
   --input examples_to_score.csv \
-  --output predictions_xgb.csv
+  --output xgb_tfidf_predictions.csv
 ```
 
-## 7. Usage (Single Snippet)
+## 7b. Predictions (Single Snippet)
 
 ```python
 python src/models/xgb_tfidf/predict_xgb_oneoff.py
 ```
 
-*Note: Adjust in code the selected model and the snippet to be tested*
+*Note: Adjust in code the selected model and the snippet to be used for predictions*
 
 ---
 
