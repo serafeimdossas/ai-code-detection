@@ -27,17 +27,17 @@ project-root/
 │   │   └── python_code_features.py   # Includes methods for code features extraction
 │   └── models/
 │       ├── xgb_tfidf/
-│       │   ├── train_xgb.py          # Train XGBoost on TF-IDF features using also Python code features
-│       │   ├── predict_xgb.py        # Batch prediction with XGB - TF-IDF trained model
-│       │   └── predict_xgb.py        # One off prediction with XGB - TF-IDF trained model
+│       │   ├── train_xgb.py                 # Train XGBoost on TF-IDF features using also Python code features
+│       │   ├── predict_xgb.py               # Batch prediction with XGB - TF-IDF trained model
+│       │   └── predict_xgb_one_off.py       # One off prediction with XGB - TF-IDF trained model
 │       ├── xgb_codebert/
-│       │   ├── train_xgb_emb.py      # Train XGBoost on codebert embedding features
-│       │   ├── predict_xgb_emb.py    # Batch prediction with codebert embedding-based XGB
-│       │   └── predict_xgb_emb.py    # One off prediction with codebert embedding-based XGB
+│       │   ├── train_xgb_emb.py             # Train XGBoost on codebert embedding features
+│       │   ├── predict_xgb_emb.py           # Batch prediction with codebert embedding-based XGB
+│       │   └── predict_xgb_emb_one_off.py   # One off prediction with codebert embedding-based XGB
 │       └── mlp_codebert/
-│           ├── train_mlp_emb.py      # Train MLP on codebert embedding features
-│           ├── predict_mlp_emb.py    # Batch prediction with MLP model
-│           └── predict_mlp_emb.py    # One off prediction with MLP model
+│           ├── train_mlp_emb.py             # Train MLP on codebert embedding features
+│           ├── predict_mlp_emb.py           # Batch prediction with MLP model
+│           └── predict_mlp_emb_one_off.py   # One off prediction with MLP model
 │
 ├── models/                           # Saved artifacts for each model
 │   ├── xgb_tfidf/
