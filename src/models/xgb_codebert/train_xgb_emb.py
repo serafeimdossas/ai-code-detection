@@ -2,12 +2,13 @@
 
 import os
 import joblib
+import json
 import argparse
 import numpy as np
+from datetime import datetime
 from xgboost import XGBClassifier
-from sklearn.metrics import roc_auc_score, classification_report
-from sklearn.preprocessing import LabelEncoder
-
+from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -18,88 +19,136 @@ def parse_args():
         help="Directory containing train_emb.npy, train_labels.npy, validation_emb.npy, validation_labels.npy, test_emb.npy, test_labels.npy"
     )
     parser.add_argument(
-        "--model_out", type=str, default="models/xgb_codebert/xgb_with_emb.json",
+        "--features_dir", type=str, default="data/processed/features",
+        help="Dir with {train,validation,test}_dense_feats.pkl (DataFrames of engineered features)"
+    )
+    parser.add_argument(
+        "--model_out", type=str, default="models/xgb_codebert/xgb_codebert.json",
         help="Output path for the trained XGBoost model"
     )
-    parser.add_argument(
-        "--n_estimators", type=int, default=500,
-        help="Number of boosting rounds"
-    )
-    parser.add_argument(
-        "--learning_rate", type=float, default=0.1,
-        help="Learning rate (eta)"
-    )
-    parser.add_argument(
-        "--max_depth", type=int, default=6,
-        help="Maximum tree depth"
-    )
-    parser.add_argument(
-        "--subsample", type=float, default=0.8,
-        help="Subsample ratio of the training instances"
-    )
-    parser.add_argument(
-        "--colsample_bytree", type=float, default=0.8,
-        help="Subsample ratio of columns when constructing each tree"
-    )
-    parser.add_argument(
-        "--early_stopping_rounds", type=int, default=20,
-        help="Rounds of early stopping"
-    )
+    parser.add_argument("--n_estimators", type=int, default=500)
+    parser.add_argument("--learning_rate", type=float, default=0.1)
+    parser.add_argument("--max_depth", type=int, default=6)
+    parser.add_argument("--subsample", type=float, default=0.8)
+    parser.add_argument("--colsample_bytree", type=float, default=0.8)
+    parser.add_argument("--reg_alpha", type=float, default=0.0)
+    parser.add_argument("--reg_lambda", type=float, default=1.0)
+    parser.add_argument("--early_stopping_rounds", type=int, default=20)
+    parser.add_argument("--n_jobs", type=int, default=4)
+    parser.add_argument("--use_gpu", action="store_true")
     return parser.parse_args()
 
+# load embeddings and labels
+def load_split_embeddings_labels(data_dir, split):
+    X = np.load(os.path.join(data_dir, f"{split}_emb.npy"), allow_pickle=True)
+    y = np.load(os.path.join(data_dir, f"{split}_labels.npy"), allow_pickle=True)
+    return X, y
+
+# load code features
+def load_dense_features_df(features_dir, split):
+    # expects pandas DataFrame pickled via joblib.dump
+    F = joblib.load(os.path.join(features_dir, f"{split}_dense_features.pkl"))
+    # ensure numeric float32
+    return F.astype("float32")
 
 def main():
     args = parse_args()
     os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
 
-    # Load embeddings and labels
-    X_train = np.load(os.path.join(args.data_dir, 'train_emb.npy'), allow_pickle=True)
-    y_train = np.load(os.path.join(args.data_dir, 'train_labels.npy'), allow_pickle=True)
-    X_val   = np.load(os.path.join(args.data_dir, 'validation_emb.npy'), allow_pickle=True)
-    y_val   = np.load(os.path.join(args.data_dir, 'validation_labels.npy'), allow_pickle=True)
-    X_test  = np.load(os.path.join(args.data_dir, 'test_emb.npy'), allow_pickle=True)
-    y_test  = np.load(os.path.join(args.data_dir, 'test_labels.npy'), allow_pickle=True)
+    # load embeddings and labels
+    X_train_emb, y_train = load_split_embeddings_labels(args.data_dir, "train")
+    X_val_emb,   y_val   = load_split_embeddings_labels(args.data_dir, "validation")
+    X_test_emb,  y_test  = load_split_embeddings_labels(args.data_dir, "test")
 
-    # Encode labels if they are strings
+    # load engineered code features
+    F_train = load_dense_features_df(args.features_dir, "train")
+    F_val   = load_dense_features_df(args.features_dir, "validation")
+    F_test  = load_dense_features_df(args.features_dir, "test")
+
+    # Save dense feature names to a JSON file
+    dense_names_out = os.path.splitext(args.model_out)[0] + "_dense_feature_names.json"
+    with open(dense_names_out, "w", encoding="utf-8") as f:
+        json.dump(list(F_train.columns), f, indent=2)
+
+    # scale code features
+    scaler = StandardScaler(with_mean=True, with_std=True)
+    F_train_scaled = scaler.fit_transform(F_train.values)
+    F_val_scaled   = scaler.transform(F_val.values)
+    F_test_scaled  = scaler.transform(F_test.values)
+
+    # Save the scaler for inference/serving
+    scaler_out = os.path.splitext(args.model_out)[0] + "_scaler.pkl"
+    joblib.dump(scaler, scaler_out)
+    print(f"[INFO] Saved scaler -> {scaler_out}")
+
+    # stack embeddings with code features
+    X_train = np.hstack([X_train_emb, F_train_scaled]).astype("float32")
+    X_val   = np.hstack([X_val_emb,   F_val_scaled]).astype("float32")
+    X_test  = np.hstack([X_test_emb,  F_test_scaled]).astype("float32")
+
+    # encode labels
     le = LabelEncoder()
     y_train_enc = le.fit_transform(y_train)
     y_val_enc   = le.transform(y_val)
     y_test_enc  = le.transform(y_test)
 
-    # Initialize classifier
+    # Save class mapping for reference
+    classes_ = list(le.classes_)
+
+    # handle class imbalance
+    pos = max(1, int((y_train_enc == 1).sum())) # type: ignore
+    neg = max(1, int((y_train_enc == 0).sum())) # type: ignore
+    scale_pos_weight = float(neg) / float(pos)
+
+    # Initialize XGBoost classifier
     clf = XGBClassifier(
-        objective='binary:logistic',
+        objective="binary:logistic",
+        eval_metric="auc",
+        tree_method="gpu_hist" if args.use_gpu else "hist",
         n_estimators=args.n_estimators,
         learning_rate=args.learning_rate,
         max_depth=args.max_depth,
         subsample=args.subsample,
         colsample_bytree=args.colsample_bytree,
-        eval_metric='auc',
-        use_label_encoder=False,
-        early_stopping_rounds=args.early_stopping_rounds
+        reg_alpha=args.reg_alpha,
+        reg_lambda=args.reg_lambda,
+        n_jobs=args.n_jobs,
+        random_state=42,
+        scale_pos_weight=scale_pos_weight,
+        max_bin=256,
+        early_stopping_rounds=args.early_stopping_rounds,
     )
 
-    # Train with early stopping on validation set
+    # Train the model
     clf.fit(
         X_train, y_train_enc,
         eval_set=[(X_val, y_val_enc)],
-        verbose=True
+        verbose=True,
     )
 
-    # Save model and encoder
+    # Save model + encoder
     clf.get_booster().save_model(args.model_out)
-    joblib.dump(le, os.path.splitext(args.model_out)[0] + '_label_encoder.pkl')
-    print(f"Model saved to {args.model_out}")
+    joblib.dump(le, os.path.splitext(args.model_out)[0] + "_label_encoder.pkl")
+    print(f"[OK] Model saved -> {args.model_out}")
 
-    # Evaluate on test set
+    # evaluate
     y_proba = clf.predict_proba(X_test)[:, 1]
-    y_pred = clf.predict(X_test)
-    y_pred_labels = le.inverse_transform(y_pred)
+    y_pred_enc = (y_proba >= 0.5).astype(int)
+    y_pred_labels = le.inverse_transform(y_pred_enc)
 
+    # Compute metrics: ROC-AUC, classification report, confusion matrix
     auc = roc_auc_score(y_test_enc, y_proba)
-    print(f"Test ROC-AUC: {auc:.4f}")
-    print(classification_report(y_test, y_pred_labels))
+    report = classification_report(y_test, y_pred_labels, output_dict=True, digits=4)
+    cm = confusion_matrix(y_test_enc, y_pred_enc).tolist()
 
+    print(f"Test ROC-AUC: {auc:.4f}")
+    print(classification_report(y_test, y_pred_labels, digits=4))
+
+    # Save evaluation artifacts with timestamp
+    stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    base = os.path.splitext(args.model_out)[0]
+    with open(base + f"_metrics_{stamp}.json", "w", encoding="utf-8") as f:
+        json.dump({"auc": auc, "report": report, "classes": classes_, "cm": cm}, f, indent=2)
 
 if __name__ == '__main__':
     main()
