@@ -25,7 +25,7 @@ def parse_args():
     )
     return parser.parse_args()
 
-
+# Function to clean and normalize code snippets
 def clean_code(snippet: str) -> str:
     if not isinstance(snippet, str):
         return ""

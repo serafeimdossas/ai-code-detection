@@ -147,7 +147,7 @@ def main():
         random_state=42,
     )
 
-    # Fit with early stopping
+    # Train the model
     clf.fit(
         X_train, y_train_enc,
         eval_set=[(X_val, y_val_enc)],
@@ -161,7 +161,7 @@ def main():
 
     # Evaluate
     y_proba = clf.predict_proba(X_test)[:, 1]
-    y_pred_enc = (y_proba >= 0.5).astype(int)  # consider tuning threshold on val
+    y_pred_enc = (y_proba >= 0.5).astype(int) 
     y_pred = le.inverse_transform(y_pred_enc)
 
     # Compute metrics: ROC-AUC, classification report, confusion matrix

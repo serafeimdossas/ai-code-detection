@@ -70,7 +70,7 @@ project-root/
 
 ## 1. Download and Split Dataset
 
-Downloads the **serafeimdossas/ai-code-detection** dataset from Hugging Face and splits into **train/validation/test**.
+Downloads the **[serafeimdossas/ai-code-detection](https://huggingface.co/datasets/serafeimdossas/ai-code-detection)** dataset from Hugging Face and splits into **train/validation/test**.
 
 ```bash
 python src/data/make_dataset.py
