@@ -145,7 +145,7 @@ def main():
     print(classification_report(y_test, y_pred_labels, digits=4))
 
     # Save evaluation artifacts with timestamp
-    stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now().strftime("%d-%m-%Y")
     base = os.path.splitext(args.model_out)[0]
     with open(base + f"_metrics_{stamp}.json", "w", encoding="utf-8") as f:
         json.dump({"auc": auc, "report": report, "classes": classes_, "cm": cm}, f, indent=2)
