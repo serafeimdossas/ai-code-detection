@@ -19,10 +19,10 @@ def parse_args():
     parser.add_argument("--model", type=str, default="models/lr_tfidf/lr_tfidf.pkl")
     parser.add_argument("--label_encoder", type=str, default="models/lr_tfidf/lr_tfidf_label_encoder.pkl")
     parser.add_argument("--penalty", type=str, default="l2", choices=["l2", "none"])
-    parser.add_argument("--C", type=float, default=2.0)
+    parser.add_argument("--C", type=float, default=10.0)
     parser.add_argument("--solver", type=str, default="liblinear", choices=["liblinear", "lbfgs", "saga", "newton-cg", "sag"])
     parser.add_argument("--max_iter", type=int, default=1000)
-    parser.add_argument("--class_weight", type=str, default=None, choices=[None, "balanced"])
+    parser.add_argument("--class_weight", type=str, default="balanced", choices=[None, "balanced"])
     parser.add_argument("--n_jobs", type=int, default=-1)
     return parser.parse_args()
 
@@ -127,7 +127,8 @@ def main():
         max_iter=args.max_iter,
         class_weight=args.class_weight,
         n_jobs=args.n_jobs,
-        verbose=1        
+        verbose=1,
+        tol=3e-3,
     )
 
     # train the model
