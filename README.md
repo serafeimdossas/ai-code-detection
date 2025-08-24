@@ -16,6 +16,8 @@ project-root/
 ├── notebooks/                    # Exploratory notebooks
 │   └── 01-exploration.ipynb
 │
+├── utils/                        # Utils files
+│
 ├── src/
 │   ├── data/
 │   │   ├── make_dataset.py           # Download and split HF dataset
@@ -159,10 +161,12 @@ models/xgb_codebert/xgb_with_emb_label_encoder.pkl
 ## 7a. Predictions (Batch)
 
 ```bash
-python src/models/xgb_tfidf/predict_xgb.py \
-  --input examples_to_score.csv \
-  --output xgb_tfidf_predictions.csv
+python src/models/xgb_tfidf/predict_xgb.py
 ```
+
+*Note: Adjust in code:*
+- The **selected model** to be used for predictions
+- **Input & Output** CSV files
 
 ## 7b. Predictions (Single Snippet)
 
@@ -170,7 +174,7 @@ python src/models/xgb_tfidf/predict_xgb.py \
 python src/models/xgb_tfidf/predict_xgb_oneoff.py
 ```
 
-*Note: Adjust in code the selected model and the snippet to be used for predictions*
+*Note: Adjust in code the **selected model** and the **code snippet** to be used for prediction*
 
 ---
 
