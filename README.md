@@ -16,8 +16,6 @@ project-root/
 ├── notebooks/                    # Exploratory notebooks
 │   └── 01-exploration.ipynb
 │
-├── utils/                        # Utils files
-│
 ├── src/
 │   ├── data/
 │   │   ├── make_dataset.py           # Download and split HF dataset
@@ -27,6 +25,7 @@ project-root/
 │   │   ├── build_tfidf.py            # Generate TF-IDF embeddings
 │   │   ├── FEATURES_REFERENCE.md     # MD file listing included code features
 │   │   └── python_code_features.py   # Includes methods for code features extraction
+│   ├── utils/                        # Utils files 
 │   └── models/
 │       ├── xgb_tfidf/
 │       │   ├── train_xgb.py                 # Train XGBoost on TF-IDF features using also Python code features
