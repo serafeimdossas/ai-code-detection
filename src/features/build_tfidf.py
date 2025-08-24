@@ -6,7 +6,6 @@ from pathlib import Path
 from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
 
-
 def preprocess_and_vectorize(
     input_dir: str = "data/raw",
     output_dir: str = "data/processed/tfidf",

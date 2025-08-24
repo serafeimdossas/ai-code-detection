@@ -1,5 +1,4 @@
 import os
-import argparse
 import joblib
 import json
 import numpy as np
@@ -10,21 +9,17 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
+MODEL="models/lr_tfidf/lr_tfidf.pkl"
+LABEL_ENCODER="models/lr_tfidf/lr_tfidf_label_encoder.pkl"
+PENALTY="l2"  # or "none"
+C=10.0
+SOLVER="liblinear"  # "liblinear", "lbfgs", "saga", "newton-cg", "sag"
+MAX_ITER=1000
+CLASS_WEIGHT="balanced"  # or None
+N_JOBS=-1  # for solvers that support parallelism, -1 means "use all processors"
 TFIDF_DIR = "data/processed/tfidf"
 CODE_FEATURES_DIR = "data/processed/features"
 THRESHOLD = 0.5
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Train Logistic Regression on TF-IDF + engineered code features")
-    parser.add_argument("--model", type=str, default="models/lr_tfidf/lr_tfidf.pkl")
-    parser.add_argument("--label_encoder", type=str, default="models/lr_tfidf/lr_tfidf_label_encoder.pkl")
-    parser.add_argument("--penalty", type=str, default="l2", choices=["l2", "none"])
-    parser.add_argument("--C", type=float, default=10.0)
-    parser.add_argument("--solver", type=str, default="liblinear", choices=["liblinear", "lbfgs", "saga", "newton-cg", "sag"])
-    parser.add_argument("--max_iter", type=int, default=1000)
-    parser.add_argument("--class_weight", type=str, default="balanced", choices=[None, "balanced"])
-    parser.add_argument("--n_jobs", type=int, default=-1)
-    return parser.parse_args()
 
 def add_dense_feats(X_sparse, feats_path, scaler=None, fit=False):
     """
@@ -75,8 +70,7 @@ def ensure_csr(*mats):
     return out
 
 def main():
-    args = parse_args()
-    os.makedirs(os.path.dirname(args.model), exist_ok=True)
+    os.makedirs(os.path.dirname(MODEL), exist_ok=True)
 
     # Load TF-IDF (sparse) and labels
     X_train_tfidf, y_train = joblib.load(os.path.join(TFIDF_DIR, "train.pkl"))
@@ -92,7 +86,7 @@ def main():
     dense_feature_names = joblib.load(train_feats_path).columns.tolist()
 
     # Save dense feature names to a JSON file
-    feat_names_out = os.path.splitext(args.model)[0] + "_dense_features.json"
+    feat_names_out = os.path.splitext(MODEL)[0] + "_dense_features.json"
     with open(feat_names_out, "w") as f:
         json.dump(dense_feature_names, f)
 
@@ -103,7 +97,7 @@ def main():
     X_test,  _      = add_dense_feats(X_test_tfidf,  test_feats_path,  scaler=scaler, fit=False)
 
     # Save the scaler for inference/serving
-    scaler_out = os.path.splitext(args.model)[0] + "_scaler.pkl"
+    scaler_out = os.path.splitext(MODEL)[0] + "_scaler.pkl"
     joblib.dump(scaler, scaler_out)
 
     # Ensure sparse CSR matrices for memory efficiency
@@ -121,12 +115,12 @@ def main():
 
     # initialize and train the Logistic Regression model
     lr = LogisticRegression(
-        penalty=args.penalty,
-        C=args.C,
-        solver=args.solver,
-        max_iter=args.max_iter,
-        class_weight=args.class_weight,
-        n_jobs=args.n_jobs,
+        penalty=PENALTY,
+        C=C,
+        solver=SOLVER,
+        max_iter=MAX_ITER,
+        class_weight=CLASS_WEIGHT,
+        n_jobs=N_JOBS,
         verbose=1,
         tol=3e-3,
     )
@@ -135,11 +129,11 @@ def main():
     lr.fit(X_train, y_train_enc)
     
     # Make sure output dir exists and save artifacts
-    Path(os.path.dirname(args.model)).mkdir(parents=True, exist_ok=True)
-    joblib.dump(lr, args.model)
-    joblib.dump(le, args.label_encoder)
-    print(f"\nSaved LR model -> {args.model}")
-    print(f"Saved LabelEncoder -> {args.label_encoder}")
+    Path(os.path.dirname(MODEL)).mkdir(parents=True, exist_ok=True)
+    joblib.dump(lr, MODEL)
+    joblib.dump(le, LABEL_ENCODER)
+    print(f"\nSaved LR model -> {MODEL}")
+    print(f"Saved LabelEncoder -> {LABEL_ENCODER}")
 
     # Predict probabilities and classes
     y_proba = lr.predict_proba(X_test)[:, 1]
@@ -155,7 +149,7 @@ def main():
 
     # Save evaluation artifacts with timestamp
     stamp = datetime.now().strftime("%d-%m-%Y")
-    base = os.path.splitext(args.model)[0]
+    base = os.path.splitext(MODEL)[0]
     with open(base + f"_metrics_{stamp}.json", "w", encoding="utf-8") as f:
         json.dump({"auc": auc, "report": report, "classes": classes_, "cm": cm}, f, indent=2)
 
