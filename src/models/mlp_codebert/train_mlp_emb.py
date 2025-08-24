@@ -1,7 +1,6 @@
 # src/models/mlp_codebert/train_mlp_emb.py
 
 import os
-import argparse
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -9,6 +8,12 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import roc_auc_score, classification_report
 import joblib
 import numpy as np
+
+EMB_DIR = "data/processed/codebert"
+OUTPUT = "models/mlp_codebert/mlp_emb.pt"
+BATCH_SIZE = 64
+LR = 1e-3
+EPOCHS = 10
 
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dim=512, dropout=0.2):
@@ -26,26 +31,16 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--emb_dir", default="data/processed/codebert")
-    p.add_argument("--out", default="models/mlp_codebert/mlp_emb.pt")
-    p.add_argument("--batch_size", type=int, default=64)
-    p.add_argument("--lr", type=float, default=1e-3)
-    p.add_argument("--epochs", type=int, default=10)
-    return p.parse_args()
-
 def main():
-    args = parse_args()
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
 
     # Load embeddings & labels
-    X_train = torch.from_numpy(np.load(f"{args.emb_dir}/train_emb.npy", allow_pickle=True)).float()
-    y_train = np.load(f"{args.emb_dir}/train_labels.npy", allow_pickle=True)
-    X_val   = torch.from_numpy(np.load(f"{args.emb_dir}/validation_emb.npy", allow_pickle=True)).float()
-    y_val   = np.load(f"{args.emb_dir}/validation_labels.npy", allow_pickle=True)
-    X_test  = torch.from_numpy(np.load(f"{args.emb_dir}/test_emb.npy", allow_pickle=True)).float()
-    y_test  = np.load(f"{args.emb_dir}/test_labels.npy", allow_pickle=True)
+    X_train = torch.from_numpy(np.load(f"{EMB_DIR}/train_emb.npy", allow_pickle=True)).float()
+    y_train = np.load(f"{EMB_DIR}/train_labels.npy", allow_pickle=True)
+    X_val   = torch.from_numpy(np.load(f"{EMB_DIR}/validation_emb.npy", allow_pickle=True)).float()
+    y_val   = np.load(f"{EMB_DIR}/validation_labels.npy", allow_pickle=True)
+    X_test  = torch.from_numpy(np.load(f"{EMB_DIR}/test_emb.npy", allow_pickle=True)).float()
+    y_test  = np.load(f"{EMB_DIR}/test_labels.npy", allow_pickle=True)
 
     # Encode labels
     le = LabelEncoder().fit(y_train)
@@ -57,19 +52,19 @@ def main():
     train_ds = TensorDataset(X_train, y_train)
     val_ds   = TensorDataset(X_val, y_val)
     test_ds  = TensorDataset(X_test, y_test)
-    train_dl = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
-    val_dl   = DataLoader(val_ds,   batch_size=args.batch_size)
-    test_dl  = DataLoader(test_ds,  batch_size=args.batch_size)
+    train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+    val_dl   = DataLoader(val_ds,   batch_size=BATCH_SIZE)
+    test_dl  = DataLoader(test_ds,  batch_size=BATCH_SIZE)
 
     # Model, optimizer, loss
     model = MLP(input_dim=X_train.size(1))
-    opt   = torch.optim.Adam(model.parameters(), lr=args.lr)
+    opt   = torch.optim.Adam(model.parameters(), lr=LR)
     loss_fn = nn.BCELoss()
 
     best_auc = 0.0
-    best_path = args.out
+    best_path = OUTPUT
     # Training loop
-    for epoch in range(args.epochs):
+    for epoch in range(EPOCHS):
         model.train()
         for xb, yb in train_dl:
             opt.zero_grad()
@@ -87,14 +82,14 @@ def main():
         if auc > best_auc:
             best_auc = auc
             # Save only model weights
-            torch.save(model.state_dict(), args.out)
+            torch.save(model.state_dict(), OUTPUT)
             # Save label encoder separately
-            joblib.dump(le, args.out.replace('.pt', '_label_encoder.pkl'))
+            joblib.dump(le, OUTPUT.replace('.pt', '_label_encoder.pkl'))
 
     print("Best val AUC:", best_auc)
 
     # Load best model weights
-    model.load_state_dict(torch.load(args.out))
+    model.load_state_dict(torch.load(OUTPUT))
     model.eval()
     with torch.no_grad():
         test_preds = torch.cat([model(xb).squeeze() for xb, _ in test_dl]).cpu().numpy()

@@ -3,40 +3,25 @@
 import os
 import joblib
 import json
-import argparse
 import numpy as np
 from datetime import datetime
 from xgboost import XGBClassifier
 from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Train XGBoost classifier on precomputed embedding features"
-    )
-    parser.add_argument(
-        "--data_dir", type=str, default="data/processed/codebert",
-        help="Directory containing train_emb.npy, train_labels.npy, validation_emb.npy, validation_labels.npy, test_emb.npy, test_labels.npy"
-    )
-    parser.add_argument(
-        "--features_dir", type=str, default="data/processed/features",
-        help="Dir with {train,validation,test}_dense_feats.pkl (DataFrames of engineered features)"
-    )
-    parser.add_argument(
-        "--model_out", type=str, default="models/xgb_codebert/xgb_codebert.json",
-        help="Output path for the trained XGBoost model"
-    )
-    parser.add_argument("--n_estimators", type=int, default=500)
-    parser.add_argument("--learning_rate", type=float, default=0.1)
-    parser.add_argument("--max_depth", type=int, default=6)
-    parser.add_argument("--subsample", type=float, default=0.8)
-    parser.add_argument("--colsample_bytree", type=float, default=0.8)
-    parser.add_argument("--reg_alpha", type=float, default=0.0)
-    parser.add_argument("--reg_lambda", type=float, default=1.0)
-    parser.add_argument("--early_stopping_rounds", type=int, default=20)
-    parser.add_argument("--n_jobs", type=int, default=4)
-    parser.add_argument("--use_gpu", action="store_true")
-    return parser.parse_args()
+DATA_DIR = "data/processed/codebert"
+FEATURES_DIR = "data/processed/features"
+MODEL_OUT = "models/xgb_codebert/xgb_codebert.json"
+N_ESTIMATORS = 500
+LEARNING_RATE = 0.1
+MAX_DEPTH = 6
+SUBSAMPLE = 0.8
+COLSAMPLE_BYTREE = 0.8
+REG_ALPHA = 0.0
+REG_LAMBDA = 1.0
+EARLY_STOPPING_ROUNDS = 20
+N_JOBS = 4
+USE_GPU = False
 
 # load embeddings and labels
 def load_split_embeddings_labels(data_dir, split):
@@ -52,21 +37,20 @@ def load_dense_features_df(features_dir, split):
     return F.astype("float32")
 
 def main():
-    args = parse_args()
-    os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
+    os.makedirs(os.path.dirname(MODEL_OUT), exist_ok=True)
 
     # load embeddings and labels
-    X_train_emb, y_train = load_split_embeddings_labels(args.data_dir, "train")
-    X_val_emb,   y_val   = load_split_embeddings_labels(args.data_dir, "validation")
-    X_test_emb,  y_test  = load_split_embeddings_labels(args.data_dir, "test")
+    X_train_emb, y_train = load_split_embeddings_labels(DATA_DIR, "train")
+    X_val_emb,   y_val   = load_split_embeddings_labels(DATA_DIR, "validation")
+    X_test_emb,  y_test  = load_split_embeddings_labels(DATA_DIR, "test")
 
     # load engineered code features
-    F_train = load_dense_features_df(args.features_dir, "train")
-    F_val   = load_dense_features_df(args.features_dir, "validation")
-    F_test  = load_dense_features_df(args.features_dir, "test")
+    F_train = load_dense_features_df(FEATURES_DIR, "train")
+    F_val   = load_dense_features_df(FEATURES_DIR, "validation")
+    F_test  = load_dense_features_df(FEATURES_DIR, "test")
 
     # Save dense feature names to a JSON file
-    dense_names_out = os.path.splitext(args.model_out)[0] + "_dense_feature_names.json"
+    dense_names_out = os.path.splitext(MODEL_OUT)[0] + "_dense_feature_names.json"
     with open(dense_names_out, "w", encoding="utf-8") as f:
         json.dump(list(F_train.columns), f, indent=2)
 
@@ -77,7 +61,7 @@ def main():
     F_test_scaled  = scaler.transform(F_test.values)
 
     # Save the scaler for inference/serving
-    scaler_out = os.path.splitext(args.model_out)[0] + "_scaler.pkl"
+    scaler_out = os.path.splitext(MODEL_OUT)[0] + "_scaler.pkl"
     joblib.dump(scaler, scaler_out)
     print(f"[INFO] Saved scaler -> {scaler_out}")
 
@@ -104,19 +88,19 @@ def main():
     clf = XGBClassifier(
         objective="binary:logistic",
         eval_metric="auc",
-        tree_method="gpu_hist" if args.use_gpu else "hist",
-        n_estimators=args.n_estimators,
-        learning_rate=args.learning_rate,
-        max_depth=args.max_depth,
-        subsample=args.subsample,
-        colsample_bytree=args.colsample_bytree,
-        reg_alpha=args.reg_alpha,
-        reg_lambda=args.reg_lambda,
-        n_jobs=args.n_jobs,
+        tree_method="gpu_hist" if USE_GPU else "hist",
+        n_estimators=N_ESTIMATORS,
+        learning_rate=LEARNING_RATE,
+        max_depth=MAX_DEPTH,
+        subsample=SUBSAMPLE,
+        colsample_bytree=COLSAMPLE_BYTREE,
+        reg_alpha=REG_ALPHA,
+        reg_lambda=REG_LAMBDA,
+        n_jobs=N_JOBS,
         random_state=42,
         scale_pos_weight=scale_pos_weight,
         max_bin=256,
-        early_stopping_rounds=args.early_stopping_rounds,
+        early_stopping_rounds=EARLY_STOPPING_ROUNDS,
     )
 
     # Train the model
@@ -127,9 +111,9 @@ def main():
     )
 
     # Save model + encoder
-    clf.get_booster().save_model(args.model_out)
-    joblib.dump(le, os.path.splitext(args.model_out)[0] + "_label_encoder.pkl")
-    print(f"[OK] Model saved -> {args.model_out}")
+    clf.get_booster().save_model(MODEL_OUT)
+    joblib.dump(le, os.path.splitext(MODEL_OUT)[0] + "_label_encoder.pkl")
+    print(f"[OK] Model saved -> {MODEL_OUT}")
 
     # evaluate
     y_proba = clf.predict_proba(X_test)[:, 1]
@@ -146,7 +130,7 @@ def main():
 
     # Save evaluation artifacts with timestamp
     stamp = datetime.now().strftime("%d-%m-%Y")
-    base = os.path.splitext(args.model_out)[0]
+    base = os.path.splitext(MODEL_OUT)[0]
     with open(base + f"_metrics_{stamp}.json", "w", encoding="utf-8") as f:
         json.dump({"auc": auc, "report": report, "classes": classes_, "cm": cm}, f, indent=2)
 

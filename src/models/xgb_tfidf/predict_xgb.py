@@ -1,44 +1,19 @@
 # src/models/xgb_tfidf/predict.py
 
 import os
-import argparse
 import json
 import joblib
 import pandas as pd
 import numpy as np
 from scipy.sparse import hstack, csr_matrix
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Predict human vs. AI code snippets using trained XGBoost model")
-    parser.add_argument(
-        "--model", type=str, default="models/xgb_tfidf/xgb_tfidf.json", 
-        help="Path to the trained XGBoost model file"
-    )
-    parser.add_argument(
-        "--vectorizer", type=str, default="data/processed/tfidf/tfidf_vectorizer.pkl", 
-        help="Path to the fitted TF-IDF vectorizer pickle"
-    )
-    parser.add_argument(
-        "--label_encoder", type=str, default="models/xgb_tfidf/xgb_tfidf_label_encoder.pkl", 
-        help="Path to the LabelEncoder pickle"
-    )
-    parser.add_argument(
-        "--scaler", type=str, default="models/xgb_tfidf/xgb_tfidf_scaler.pkl", 
-        help="StandardScaler for dense features"
-    )
-    parser.add_argument(
-        "--dense_feature_names", type=str, default="models/xgb_tfidf/xgb_tfidf_dense_features.json", 
-        help="JSON list with dense feature columns used at training (ordered)"
-    )
-    parser.add_argument(
-        "--input", type=str, default="data/raw/test.csv", 
-        help="Path to a CSV file with a column 'code' containing snippets to predict"
-    )
-    parser.add_argument(
-        "--output", type=str, default="output/xgb_tfidf_predictions.csv", 
-        help="Path to write predictions CSV"
-    )
-    return parser.parse_args()
+MODEL="models/xgb_tfidf/xgb_tfidf.json"
+VECTORIZER="data/processed/tfidf/tfidf_vectorizer.pkl"
+LABEL_ENCODER="models/xgb_tfidf/xgb_tfidf_label_encoder.pkl"
+SCALER="models/xgb_tfidf/xgb_tfidf_scaler.pkl"
+DENSE_FEATURE_NAMES="models/xgb_tfidf/xgb_tfidf_dense_features.json"
+INPUT="data/raw/test.csv"
+OUTPUT="output/xgb_tfidf_predictions.csv"
 
 def clean_for_tfidf(snippet: str) -> str:
     # Clean code snippet for TF-IDF vectorization
@@ -96,21 +71,19 @@ def load_model_any(path: str):
     return None, booster
 
 def main():
-    args = parse_args()
-    
     # Ensure output directory exists
-    out_dir = os.path.dirname(args.output)
+    out_dir = os.path.dirname(OUTPUT)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
     # Load artifacts
-    vect = joblib.load(args.vectorizer)
-    le = joblib.load(args.label_encoder)
-    scaler = joblib.load(args.scaler)
-    sk_model, booster = load_model_any(args.model)
+    vect = joblib.load(VECTORIZER)
+    le = joblib.load(LABEL_ENCODER)
+    scaler = joblib.load(SCALER)
+    sk_model, booster = load_model_any(MODEL)
 
     # Input
-    df = pd.read_csv(args.input)
+    df = pd.read_csv(INPUT)
     if "code" not in df.columns:
         raise KeyError("Input CSV must contain a 'code' column.")
 
@@ -123,7 +96,7 @@ def main():
 
     # Dense features: build -> align -> scale
     F = build_dense_features_df(df["code_feats"])
-    F = align_dense_features(F, args.dense_feature_names)
+    F = align_dense_features(F, DENSE_FEATURE_NAMES)
 
     # Safety check on scaler dims
     expected = getattr(scaler, "mean_", None)
@@ -163,8 +136,8 @@ def main():
         out["true_label"] = df["label"]
         out["correct"] = np.where(out["pred_label"] == out["true_label"], "CorrectPred", "IncorrectPred")
 
-    out.to_csv(args.output, index=False)
-    print(f"[OK] Wrote predictions to {args.output}")
+    out.to_csv(OUTPUT, index=False)
+    print(f"[OK] Wrote predictions to {OUTPUT}")
     print(f"Shapes — TF-IDF: {X_tfidf.shape}, Dense: {F.shape}, Stacked: {X.shape}")
 
 if __name__ == '__main__':

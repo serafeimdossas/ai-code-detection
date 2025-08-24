@@ -2,7 +2,6 @@
 
 import os
 import joblib
-import argparse
 import json
 import numpy as np
 from datetime import datetime
@@ -11,21 +10,18 @@ from sklearn.metrics import classification_report, roc_auc_score, confusion_matr
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from scipy.sparse import hstack, csr_matrix, issparse, isspmatrix_csr
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Train an XGBoost classifier on TF-IDF features")
-    parser.add_argument("--data_dir", type=str, default="data/processed/tfidf", help="Directory with train.pkl, validation.pkl, test.pkl")
-    parser.add_argument("--features_dir", type=str, default="data/processed/features", help="Directory with *_dense_features.pkl built by build_code_features.py")
-    parser.add_argument("--model_out", type=str, default="models/xgb_tfidf/xgb_tfidf.json", help="Path to save the trained XGBoost model")
-    parser.add_argument("--n_estimators", type=int, default=300)
-    parser.add_argument("--learning_rate", type=float, default=0.1)
-    parser.add_argument("--max_depth", type=int, default=4)
-    parser.add_argument("--subsample", type=float, default=0.8)
-    parser.add_argument("--colsample_bytree", type=float, default=0.5)
-    parser.add_argument("--reg_lambda", type=float, default=1.0)
-    parser.add_argument("--early_stopping_rounds", type=int, default=50)
-    parser.add_argument("--n_jobs", type=int, default=4)
-    parser.add_argument("--use_gpu", action="store_true")
-    return parser.parse_args()
+DATA_DIR = "data/processed/tfidf"
+FEATURES_DIR = "data/processed/features"
+MODEL_OUT = "models/xgb_tfidf/xgb_tfidf.json"
+N_ESTIMATORS = 300
+LEARNING_RATE = 0.1
+MAX_DEPTH = 4
+SUBSAMPLE = 0.8
+COLSAMPLE_BYTREE = 0.5
+REG_LAMBDA = 1.0
+EARLY_STOPPING_ROUNDS = 50
+N_JOBS = 4
+USE_GPU = False
 
 def ensure_csr(*mats):
     """
@@ -76,24 +72,23 @@ def add_dense_feats(X_sparse, feats_path, scaler=None, fit=False):
     return X_combined, scaler
 
 def main():
-    args = parse_args()
-    os.makedirs(os.path.dirname(args.model_out), exist_ok=True)
+    os.makedirs(os.path.dirname(MODEL_OUT), exist_ok=True)
 
     # Load TF-IDF (sparse) and labels
-    X_train_tfidf, y_train = joblib.load(os.path.join(args.data_dir, "train.pkl"))
-    X_val_tfidf,   y_val   = joblib.load(os.path.join(args.data_dir, "validation.pkl"))
-    X_test_tfidf,  y_test  = joblib.load(os.path.join(args.data_dir, "test.pkl"))
+    X_train_tfidf, y_train = joblib.load(os.path.join(DATA_DIR, "train.pkl"))
+    X_val_tfidf,   y_val   = joblib.load(os.path.join(DATA_DIR, "validation.pkl"))
+    X_test_tfidf,  y_test  = joblib.load(os.path.join(DATA_DIR, "test.pkl"))
 
     # Load engineered dense features and combine with TF-IDF (scale on train, reuse for val/test)
-    train_feats_path = os.path.join(args.features_dir, "train_dense_features.pkl")
-    val_feats_path   = os.path.join(args.features_dir, "validation_dense_features.pkl")
-    test_feats_path  = os.path.join(args.features_dir, "test_dense_features.pkl")
+    train_feats_path = os.path.join(FEATURES_DIR, "train_dense_features.pkl")
+    val_feats_path   = os.path.join(FEATURES_DIR, "validation_dense_features.pkl")
+    test_feats_path  = os.path.join(FEATURES_DIR, "test_dense_features.pkl")
 
     # Load dense feature names for saving later
     dense_feature_names = joblib.load(train_feats_path).columns.tolist()
 
     # Save dense feature names to a JSON file
-    feat_names_out = os.path.splitext(args.model_out)[0] + "_dense_features.json"
+    feat_names_out = os.path.splitext(MODEL_OUT)[0] + "_dense_features.json"
     with open(feat_names_out, "w") as f:
         json.dump(dense_feature_names, f)
 
@@ -104,7 +99,7 @@ def main():
     X_test,  _      = add_dense_feats(X_test_tfidf,  test_feats_path,  scaler=scaler, fit=False)
 
     # Save the scaler for inference/serving
-    scaler_out = os.path.splitext(args.model_out)[0] + "_scaler.pkl"
+    scaler_out = os.path.splitext(MODEL_OUT)[0] + "_scaler.pkl"
     joblib.dump(scaler, scaler_out)
 
     # Ensure sparse CSR matrices for memory efficiency
@@ -135,15 +130,15 @@ def main():
         objective='binary:logistic',
         # use_label_encoder=False,
         eval_metric='auc',
-        tree_method='gpu_hist' if args.use_gpu else 'hist', # 'hist' is efficient for large datasets
-        n_estimators=args.n_estimators,
-        learning_rate=args.learning_rate,
-        max_depth=args.max_depth,
-        subsample=args.subsample,
-        colsample_bytree=args.colsample_bytree,
-        early_stopping_rounds=args.early_stopping_rounds,
+        tree_method='gpu_hist' if USE_GPU else 'hist', # 'hist' is efficient for large datasets
+        n_estimators=N_ESTIMATORS,
+        learning_rate=LEARNING_RATE,
+        max_depth=MAX_DEPTH,
+        subsample=SUBSAMPLE,
+        colsample_bytree=COLSAMPLE_BYTREE,
+        early_stopping_rounds=EARLY_STOPPING_ROUNDS,
         reg_lambda=1.0,
-        n_jobs=args.n_jobs,
+        n_jobs=N_JOBS,
         random_state=42,
     )
 
@@ -155,9 +150,9 @@ def main():
     )
 
     # Save model and label encoder
-    clf.get_booster().save_model(args.model_out)
-    joblib.dump(le, os.path.splitext(args.model_out)[0] + '_label_encoder.pkl')
-    print(f"Model saved to {args.model_out}")
+    clf.get_booster().save_model(MODEL_OUT)
+    joblib.dump(le, os.path.splitext(MODEL_OUT)[0] + '_label_encoder.pkl')
+    print(f"Model saved to {MODEL_OUT}")
 
     # Evaluate
     y_proba = clf.predict_proba(X_test)[:, 1]
@@ -174,7 +169,7 @@ def main():
 
     # Save evaluation artifacts with timestamp
     stamp = datetime.now().strftime("%d-%m-%Y")
-    base = os.path.splitext(args.model_out)[0]
+    base = os.path.splitext(MODEL_OUT)[0]
     with open(base + f"_metrics_{stamp}.json", "w", encoding="utf-8") as f:
         json.dump({"auc": auc, "report": report, "classes": classes_, "cm": cm}, f, indent=2)
 
