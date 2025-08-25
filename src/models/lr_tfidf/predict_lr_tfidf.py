@@ -1,4 +1,4 @@
-# src/models/xgb_tfidf/predict.py
+# src/models/lr_tfidf/predict_lr_tfidf.py
 
 import os
 import json
@@ -7,13 +7,17 @@ import pandas as pd
 import numpy as np
 from scipy.sparse import hstack, csr_matrix
 
-MODEL="models/xgb_tfidf/xgb_tfidf.json"
+# Import the feature extraction function
+from src.features.python_code_features import python_code_features
+
+MODEL="models/lr_tfidf/lr_tfidf.pkl"
 VECTORIZER="data/processed/tfidf/tfidf_vectorizer.pkl"
-LABEL_ENCODER="models/xgb_tfidf/xgb_tfidf_label_encoder.pkl"
-SCALER="models/xgb_tfidf/xgb_tfidf_scaler.pkl"
-DENSE_FEATURE_NAMES="models/xgb_tfidf/xgb_tfidf_dense_features.json"
+LABEL_ENCODER="models/lr_tfidf/lr_tfidf_label_encoder.pkl"
+SCALER="models/lr_tfidf/lr_tfidf_scaler.pkl"
+DENSE_FEATURE_NAMES="models/lr_tfidf/lr_tfidf_dense_features.json"
+SCALE_DENSE=True
 INPUT="data/raw/test.csv"
-OUTPUT="output/xgb_tfidf_predictions.csv"
+OUTPUT="output/lr_tfidf_predictions.csv"
 
 def clean_for_tfidf(snippet: str) -> str:
     # Clean code snippet for TF-IDF vectorization
@@ -27,9 +31,6 @@ def clean_for_feats(snippet: str) -> str:
         return ""
     s = snippet.replace("\r\n", "\n").replace("\r", "\n")
     return "\n".join(line.rstrip() for line in s.split("\n"))
-
-# Import the feature extraction function
-from src.features.python_code_features import python_code_features
 
 # Build dense features DataFrame from code snippets
 def build_dense_features_df(code_series: pd.Series) -> pd.DataFrame:
@@ -60,17 +61,7 @@ def ensure_csr(*mats):
         out.append(M)
     return out
 
-# Load model from either XGBoost or scikit-learn format
-def load_model_any(path: str):
-    # Check if the path is a pickle file or an XGBoost model
-    if path.endswith(".pkl"):
-        return joblib.load(path), None
-    import xgboost as xgb
-    booster = xgb.Booster()
-    booster.load_model(path)
-    return None, booster
-
-def main():
+def main():    
     # Ensure output directory exists
     out_dir = os.path.dirname(OUTPUT)
     if out_dir:
@@ -80,14 +71,14 @@ def main():
     vect = joblib.load(VECTORIZER)
     le = joblib.load(LABEL_ENCODER)
     scaler = joblib.load(SCALER)
-    sk_model, booster = load_model_any(MODEL)
+    sk_model = joblib.load(MODEL)
 
     # Input
     df = pd.read_csv(INPUT)
     if "code" not in df.columns:
         raise KeyError("Input CSV must contain a 'code' column.")
 
-    # Clean for each branch
+    # Prepare text for both branches
     df["code_tfidf"] = df["code"].apply(clean_for_tfidf)
     df["code_feats"] = df["code"].apply(clean_for_feats)
 
@@ -97,6 +88,7 @@ def main():
     # Dense features: build -> align -> scale
     F = build_dense_features_df(df["code_feats"])
     F = align_dense_features(F, DENSE_FEATURE_NAMES)
+    F = F.fillna(0.0)
 
     # Safety check on scaler dims
     expected = getattr(scaler, "mean_", None)
@@ -112,15 +104,8 @@ def main():
     X, = ensure_csr(X)
 
     # Predict
-    if sk_model is not None:
-        prob_human = sk_model.predict_proba(X)[:, 1]
-        pred_enc = sk_model.predict(X)
-    else:
-        import xgboost as xgb
-        dmat = xgb.DMatrix(X)
-        prob_human = booster.predict(dmat) # type: ignore
-        pred_enc = (prob_human >= 0.5).astype(int)
-
+    prob_human = sk_model.predict_proba(X)[:, 1] 
+    pred_enc = sk_model.predict(X)
     pred_label = le.inverse_transform(pred_enc)
 
     # Output frame (include optional cols if present)
@@ -132,11 +117,15 @@ def main():
         "prob_human": prob_human,
     })
 
+    # Add true labels and correctness if available
     if "label" in df.columns:
         out["true_label"] = df["label"]
         out["correct"] = np.where(out["pred_label"] == out["true_label"], "CorrectPred", "IncorrectPred")
 
+    # write output
     out.to_csv(OUTPUT, index=False)
+
+    # print summary
     print(f"[OK] Wrote predictions to {OUTPUT}")
     print(f"Shapes — TF-IDF: {X_tfidf.shape}, Dense: {F.shape}, Stacked: {X.shape}")
 

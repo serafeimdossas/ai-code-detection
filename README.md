@@ -25,6 +25,7 @@ project-root/
 │   │   ├── build_tfidf.py            # Generate TF-IDF embeddings
 │   │   ├── FEATURES_REFERENCE.md     # MD file listing included code features
 │   │   └── python_code_features.py   # Includes methods for code features extraction
+│   ├── utils/                        # Utils files 
 │   └── models/
 │       ├── xgb_tfidf/
 │       │   ├── train_xgb.py                 # Train XGBoost on TF-IDF features using also Python code features
@@ -159,10 +160,12 @@ models/xgb_codebert/xgb_with_emb_label_encoder.pkl
 ## 7a. Predictions (Batch)
 
 ```bash
-python src/models/xgb_tfidf/predict_xgb.py \
-  --input examples_to_score.csv \
-  --output xgb_tfidf_predictions.csv
+python src/models/xgb_tfidf/predict_xgb.py
 ```
+
+*Note: Adjust in code:*
+- The **selected model** to be used for predictions
+- **Input & Output** CSV files
 
 ## 7b. Predictions (Single Snippet)
 
@@ -170,7 +173,7 @@ python src/models/xgb_tfidf/predict_xgb.py \
 python src/models/xgb_tfidf/predict_xgb_oneoff.py
 ```
 
-*Note: Adjust in code the selected model and the snippet to be used for predictions*
+*Note: Adjust in code the **selected model** and the **code snippet** to be used for prediction*
 
 ---
 

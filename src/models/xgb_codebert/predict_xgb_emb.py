@@ -2,7 +2,6 @@
 
 import os
 import json
-import argparse
 import joblib
 import pandas as pd
 import xgboost as xgb
@@ -12,31 +11,14 @@ from sklearn.preprocessing import StandardScaler
 from typing import List
 from src.features.python_code_features import python_code_features
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Predict human vs. AI code snippets using embedding-based XGBoost model"
-    )
-    parser.add_argument(
-        "--model", type=str, default="models/xgb_codebert/xgb_codebert.json",
-        help="Path to the trained XGBoost model file"
-    )
-    parser.add_argument(
-        "--label_encoder", type=str, default="models/xgb_codebert/xgb_codebert_label_encoder.pkl",
-        help="Path to the LabelEncoder pickle"
-    )
-    parser.add_argument(
-        "--scaler", type=str, default="models/xgb_codebert/xgb_codebert_scaler.pkl",
-        help="StandardScaler pickle for dense features"
-    )
-    parser.add_argument(
-        "--dense_feature_names", type=str, default="models/xgb_codebert/xgb_codebert_dense_feature_names.json",
-        help="JSON list of dense feature columns in training order"
-    )
-    parser.add_argument("--embed_model", type=str, default="microsoft/codebert-base")
-    parser.add_argument("--input", type=str, default="data/raw/test.csv")
-    parser.add_argument("--output", type=str, default="output/xgb_codebert_predictions.csv")
-    parser.add_argument("--threshold", type=float, default=0.5)
-    return parser.parse_args()
+MODEL="models/xgb_codebert/xgb_codebert.json"
+LABEL_ENCODER="models/xgb_codebert/xgb_codebert_label_encoder.pkl"
+SCALER="models/xgb_codebert/xgb_codebert_scaler.pkl"
+DENSE_FEATURE_NAMES="models/xgb_codebert/xgb_codebert_dense_feature_names.json"
+EMBED_MODEL="microsoft/codebert-base"
+INPUT="data/raw/test.csv"
+OUTPUT="output/xgb_codebert_predictions.csv"
+THRESHOLD=0.5
 
 def clean_for_embed(snippet: str) -> str:
     if not isinstance(snippet, str):
@@ -72,25 +54,23 @@ def load_model_any(path: str):
     booster.load_model(path)
     return None, booster
 
-def main():
-    args = parse_args()
-    
+def main():    
     # Ensure output directory exists
-    out_dir = os.path.dirname(args.output)
+    out_dir = os.path.dirname(OUTPUT)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
     
     # Load artifacts
-    le = joblib.load(args.label_encoder)
-    scaler = joblib.load(args.scaler)
-    dense_cols = load_dense_names(args.dense_feature_names)
-    sk_model, booster = load_model_any(args.model)
+    le = joblib.load(LABEL_ENCODER)
+    scaler = joblib.load(SCALER)
+    dense_cols = load_dense_names(DENSE_FEATURE_NAMES)
+    sk_model, booster = load_model_any(MODEL)
 
     # Initialize embedding model
-    embed_model = SentenceTransformer(args.embed_model)
+    embed_model = SentenceTransformer(EMBED_MODEL)
 
     # Read input CSV
-    df = pd.read_csv(args.input)
+    df = pd.read_csv(INPUT)
     if 'code' not in df.columns:
         raise KeyError("Input CSV must contain a 'code' column")
 
@@ -121,7 +101,7 @@ def main():
     else:
         dmat = xgb.DMatrix(X)
         proba = booster.predict(dmat) # type: ignore
-    pred_enc = (proba >= args.threshold).astype(int)
+    pred_enc = (proba >= THRESHOLD).astype(int)
     pred_label = le.inverse_transform(pred_enc)
 
     # Output
@@ -138,8 +118,8 @@ def main():
         out_df["true_label"] = df["label"]
         out_df["correct"] = (out_df["pred_label"] == out_df["true_label"]).map({True: "CorrectPred", False: "IncorrectPred"})
 
-    out_df.to_csv(args.output, index=False)
-    print(f"[OK] Wrote predictions -> {args.output}")
+    out_df.to_csv(OUTPUT, index=False)
+    print(f"[OK] Wrote predictions -> {OUTPUT}")
     print(f"[Shapes] emb: {embeddings.shape}, dense: {F.shape}, stacked: {X.shape}")
 
 if __name__ == '__main__':
