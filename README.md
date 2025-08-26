@@ -27,6 +27,10 @@ project-root/
 │   │   └── python_code_features.py   # Includes methods for code features extraction
 │   ├── utils/                        # Utils files 
 │   └── models/
+│       ├── lr_tfidf/
+│       │   ├── train_lr_tfidf.py                 # Train Logistic Regression on TF-IDF features using also Python code features
+│       │   ├── predict_lr_tfidf.py               # Batch prediction with Logistic Regression - TF-IDF trained model
+│       │   └── predict_lr_tfidf_one_off.py       # One off prediction with Logistic Regression - TF-IDF trained model
 │       ├── xgb_tfidf/
 │       │   ├── train_xgb.py                 # Train XGBoost on TF-IDF features using also Python code features
 │       │   ├── predict_xgb.py               # Batch prediction with XGB - TF-IDF trained model
@@ -41,6 +45,7 @@ project-root/
 │           └── predict_mlp_emb_one_off.py   # One off prediction with MLP model
 │
 ├── models/                           # Saved artifacts for each model
+│   ├── lr_tfidf/
 │   ├── xgb_tfidf/
 │   ├── xgb_codebert/
 │   └── mlp_codebert/
@@ -128,7 +133,9 @@ train_dense_features.pkl
 validation_dense_features.pkl
 ```
 
-## 5. Train XGBoost (TF-IDF)
+## 5. Train a model
+
+Pick a Model to train e.g. **XGBoost (TF-IDF)**
 
 ```bash
 python src/models/xgb_tfidf/train_xgb.py
@@ -144,20 +151,7 @@ models/xgb_tfidf/xgb_tfidf_scaler.pkl
 models/xgb_tfidf/xgb_tfidf.json
 ```
 
-## 6. Train XGBoost (CodeBERT Embeddings)
-
-```bash
-python src/models/xgb_codebert/train_xgb_emb.py
-```
-
-This saves:
-
-```
-models/xgb_codebert/xgb_with_emb.json
-models/xgb_codebert/xgb_with_emb_label_encoder.pkl
-```
-
-## 7a. Predictions (Batch)
+## 6a. Predictions (Batch)
 
 ```bash
 python src/models/xgb_tfidf/predict_xgb.py
@@ -167,7 +161,7 @@ python src/models/xgb_tfidf/predict_xgb.py
 - The **selected model** to be used for predictions
 - **Input & Output** CSV files
 
-## 7b. Predictions (Single Snippet)
+## 6b. Predictions (Single Snippet)
 
 ```python
 python src/models/xgb_tfidf/predict_xgb_oneoff.py
