@@ -14,7 +14,6 @@ project-root/
 │       └── codebert/             # Precomputed embedding arrays & label files
 │
 ├── notebooks/                    # Exploratory notebooks
-│   └── 01-exploration.ipynb
 │
 ├── src/
 │   ├── data/
