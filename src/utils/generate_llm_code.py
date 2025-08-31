@@ -2,6 +2,8 @@ import re, os, json, time
 from dataclasses import dataclass
 from typing import List
 import openai
+from anthropic import Anthropic
+import google.generativeai as genai
 from code_requirements_extraction import Spec
 
 def build_prompt(spec: Spec):
@@ -47,6 +49,48 @@ def call_llm(model: str, prompt: str, temperature: float=0.0):
 
         # return the output text
         return response.choices[0].message.content
+    elif (provider == "anthropic"):
+        # anthropic api key
+        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+
+        # check if api key exists
+        if not anthropic_api_key:
+            raise RuntimeError("Please set the ANTHROPIC_API_KEY environment variable.")
+        
+        # create anthropic client
+        client = Anthropic(api_key=anthropic_api_key)
+
+        # call Anthropic
+        response = client.messages.create(
+            model=model,
+            max_tokens=4000,
+            temperature=temperature,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        # return the output text
+        return response.content[0].text # type: ignore
+    elif (provider == "google"):
+        # gemini api key
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+
+        # check if api key exists
+        if not gemini_api_key:
+            raise RuntimeError("Please set the GEMINI_API_KEY environment variable.")
+        
+        # set api key
+        genai.configure(api_key=gemini_api_key) # type: ignore
+
+        # Initialize the Gemini model
+        gemini_model = genai.GenerativeModel(model)  # type: ignore
+
+        # call Google Gemini API
+        response = gemini_model.generate_content(prompt)
+
+        # return the output text
+        return response.text
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
