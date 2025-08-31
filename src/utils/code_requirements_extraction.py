@@ -1,8 +1,8 @@
-import ast
-import re
-import sys
-from pathlib import Path
+import ast, re, json, hashlib, os
+from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional
+
+OUTPUT_FOLDER = "artifacts/specs"
 
 # regex for detecting comments that may indicate requirements
 COMMENT_HINTS = re.compile(r"\b(shall|must|should|required|todo|fixme)\b", re.I)
@@ -12,7 +12,28 @@ HTTP_FUNCS = {("requests", f) for f in ["get","post","put","patch","delete","hea
 FILE_FUNCS = {("builtins","open")}
 PRINT_FUNCS = {("builtins","print")}
 DB_MODULES = {"sqlite3", "psycopg2", "mysql", "sqlalchemy"}
-LOG_FUNCS = {("logging", f) for f in ["debug","info","warning","error","critical","exception"]}
+LOG_FUNCS = {("logging", f) for f in ["debug","info","warning","error","critical","exception"]}# Define a dataclass for the specification
+
+@dataclass
+class StaticInfo:
+    functions: List[Dict[str, Any]]
+    classes: List[Dict[str, Any]]
+    io: List[str]
+    http: List[str]
+    db: List[str]
+    exceptions: List[str]
+    cli: bool
+    logging: List[str]
+
+@dataclass
+class Spec:
+    snippet_id: str
+    requirements: List[str]
+    static_info: StaticInfo
+
+# create unique hash for code snippet
+def hash_code_snippet(code):
+    return hashlib.sha256(code.encode('utf-8')).hexdigest()[:12]
 
 # get comments from source code
 def get_comments(src: str):
@@ -220,7 +241,7 @@ def sentence_case(string: str):
     return string[0:1].upper() + string[1:] if string else string
 
 # create list of functional requirements from analysis
-def to_requirements(analysis: Analyzer, comments: List[str]):
+def to_requirements(analysis: Analyzer, comments: List[str], code: str):
     reqs: List[str] = []
     details: Dict[str, Any] = {}
 
@@ -290,7 +311,20 @@ def to_requirements(analysis: Analyzer, comments: List[str]):
     details["cli"] = analysis.argparse_used or analysis.sys_argv_used
     details["logging"] = analysis.logging_ops
 
-    return {"requirements": reqs, "signals": details}
+    return Spec(
+        snippet_id=hash_code_snippet(code),
+        requirements=reqs,
+        static_info=StaticInfo(
+            functions=analysis.functions,
+            classes=analysis.classes,
+            io=analysis.io_ops,
+            http=analysis.http_ops,
+            db=analysis.db_ops,
+            exceptions=analysis.raises,
+            cli=analysis.argparse_used or analysis.sys_argv_used,
+            logging=analysis.logging_ops
+        )
+    )
 
 # analyze code snippet and return extracted requirements
 def analyze_source(src: str):
@@ -305,7 +339,14 @@ def analyze_source(src: str):
     comments = get_comments(src)
 
     # get and return extracted requirements
-    return to_requirements(analyzer, comments)
+    return to_requirements(analyzer, comments, src)
+
+def save_spec(spec: Spec, folder):
+    # Ensure the output directory exists
+    os.makedirs(folder, exist_ok=True)
+    # Save the spec as a JSON file
+    with open(os.path.join(folder, f"{spec.snippet_id}.json"), "w") as f:
+        json.dump(asdict(spec), f, indent=2)
 
 def main():
     code = """def factorial(n):
@@ -321,15 +362,16 @@ def main():
          result *= i
     return result
     """
+
+    # Analyze source code
     result = analyze_source(code)
+
+    # Save code spec to file
+    save_spec(result, OUTPUT_FOLDER)
 
     # Pretty print
     print("=== Functional Requirements ===")
-    for i, r in enumerate(result["requirements"], 1):
-        print(f"{i}. {r}")
-    print("\n=== Signals (for traceability) ===")
-    import json
-    print(json.dumps(result["signals"], indent=2))
+    print("\n".join([f"{i}. {r}" for i, r in enumerate(result.requirements, 1)]))
 
 if __name__ == "__main__":
     main()
