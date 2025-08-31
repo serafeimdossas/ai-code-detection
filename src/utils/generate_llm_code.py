@@ -2,22 +2,23 @@ import re, os, json, time
 from dataclasses import dataclass
 from typing import List
 import openai
-from code_reqs_extraction import Spec
+from code_requirements_extraction import Spec
 
 def build_prompt(spec: Spec):
     # prompt template
-    PROMPT = """You are a precise code generator.
-        Implement function "{name}" with signature args={args}.
-        Requirements (must all hold):
-        {reqs}
-        Constraints: {constraints}
-        Return clean, executable Python code with only the function and minimal helpers.
-        Do not import external libraries unless required for correctness.
+    PROMPT = """You are a precise Python code generator.  
+        Implement code that satisfies all of the following requirements:  
+        {reqs}  
+
+        Guidelines:  
+        - The code may include functions, classes, or a full module, depending on the requirements.  
+        - The implementation must be clean, correct, and directly executable.
+        - Do not include explanations, comments, or extra text.  
+        - Only return the Python code in a proper code block. 
     """
     # fill in the prompt
-    reqs = "\n".join([f"- {r}" for r in spec.requirements])
-    cons = ", ".join(spec.constraints)
-    return PROMPT.format(name=spec.signature_hint["name"], args=spec.signature_hint["args"], reqs=reqs, constraints=cons)
+    reqs = "\n".join([f"{i}. {r}" for i, r in enumerate(spec.requirements, 1)])
+    return PROMPT.format(reqs=reqs)
 
 def call_llm(model: str, prompt: str, temperature: float=0.0):
     # determine provider from model string
