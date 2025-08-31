@@ -12,7 +12,7 @@ HTTP_FUNCS = {("requests", f) for f in ["get","post","put","patch","delete","hea
 FILE_FUNCS = {("builtins","open")}
 PRINT_FUNCS = {("builtins","print")}
 DB_MODULES = {"sqlite3", "psycopg2", "mysql", "sqlalchemy"}
-LOG_FUNCS = {("logging", f) for f in ["debug","info","warning","error","critical","exception"]}# Define a dataclass for the specification
+LOG_FUNCS = {("logging", f) for f in ["debug","info","warning","error","critical","exception"]}
 
 @dataclass
 class StaticInfo:
