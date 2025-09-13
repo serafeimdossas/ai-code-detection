@@ -18,6 +18,9 @@ output/
 # Notebooks artifacts 
 notebooks/**/
 
+# artifacts
+artifacts/
+
 # Folder structure notes
 folder_structure
 folder_structure_v2

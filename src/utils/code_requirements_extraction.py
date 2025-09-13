@@ -326,8 +326,19 @@ def to_requirements(analysis: Analyzer, comments: List[str], code: str):
         )
     )
 
+# clean source code before analysis
+def clean_source(src: str):
+    # remove non-breaking spaces
+    src = src.replace("\u00a0", " ")
+    # Remove Python REPL prompts (>>> or ... at the start of a line)
+    src = re.sub(r"^\s*(>>>|\.\.\.)\s?", "", src, flags=re.MULTILINE)
+    # return cleaned source code
+    return src
+
 # analyze code snippet and return extracted requirements
 def analyze_source(src: str):
+    src = clean_source(src)
+    
     # get AST of code
     tree = ast.parse(src)
     
