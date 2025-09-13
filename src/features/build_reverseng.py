@@ -18,11 +18,15 @@ TEMPS = [0.0, 0.7]                  # deterministic + diverse
 K = 2                               # candidates per (model, temp)
 
 # Loads samples from the specified dataset
-def load_samples_from_dataset(number_of_samples):
+def load_samples_from_dataset(number_of_samples=None):
     # load dataset
     dataset = load_dataset(DATASET_NAME)
-    # keep first `number_of_samples` samples
-    samples = dataset["train"].select(range(number_of_samples)) # type: ignore
+    samples = dataset["train"]
+    # check if subset was requested
+    if number_of_samples is not None:        
+        # keep first `number_of_samples` samples
+        samples = dataset["train"].select(range(number_of_samples)) # type: ignore
+    print(f"Loaded {len(samples)} samples") # type: ignore
     return samples
 
 # Extracts code requirements from dataset samples
