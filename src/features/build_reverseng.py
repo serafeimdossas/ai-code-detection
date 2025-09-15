@@ -35,7 +35,10 @@ def load_samples_from_dataset(number_of_samples=None):
     return samples
 
 # Extracts code requirements from dataset samples
-def extract_code_requirements(samples):
+def extract_code_requirements(samples):        
+    # Ensure original directory exists
+    os.makedirs(ORIGINAL_FOLDER, exist_ok=True)
+
     # array to store occured errors for future adjustments 
     errors = []
 
@@ -68,10 +71,10 @@ def extract_code_requirements(samples):
         if len(requirements.requirements) > 0:
             # save spec file
             save_spec(requirements, SPECS_FOLDER)
-            
+
             # save original code
             original_code_path = f"{ORIGINAL_FOLDER}/{requirements.snippet_id}.py"
-            with open(original_code_path, "w") as f:
+            with open(original_code_path, "w", encoding="utf-8") as f:
                 f.write(code)
 
             # update result array and counter
@@ -99,10 +102,7 @@ def generate_ai_code():
         spec = Spec(**spec_data)
 
         # generate candidates for current spec file
-        cand_paths = gen_candidates(spec, LLM_MODELS, CANDIDATES_FOLDER, CACHE_FOLDER, TEMPS, K)
-
-        # experimental break of loop
-        break
+        gen_candidates(spec, LLM_MODELS, CANDIDATES_FOLDER, CACHE_FOLDER, TEMPS, K)
 
 def calculate_fused_values(snippet_ids):
     # parse array
