@@ -1,6 +1,7 @@
 # src/features/build_reverseng.py
 
 import os, json
+import pandas as pd
 from datasets import load_dataset
 from src.utils.code_requirements_extraction import analyze_source, save_spec, Spec
 from src.utils.generate_llm_code import gen_candidates
@@ -13,11 +14,15 @@ SPECS_FOLDER = "artifacts/specs"
 CANDIDATES_FOLDER = "artifacts/candidates"
 CACHE_FOLDER = "artifacts/cache"
 ORIGINAL_FOLDER = "artifacts/original"
+DATASET_FOLDER = "artifacts/dataset"
 
 # LLMs configuration
-LLM_MODELS = ["openai:gpt-4o-mini"] # e.g., "openai:gpt-4o-mini", "anthropic:claude-3-5-sonnet", "vertex:codegemini"
-TEMPS = [0.0, 0.7]                  # deterministic + diverse
-K = 2                               # candidates per (model, temp)
+# models list e.g., "openai:gpt-4o-mini", "anthropic:claude-3-5-sonnet", "vertex:codegemini"
+# LLM_MODELS = ["openai:gpt-4o-mini", "google:gemini-2.5-flash-lite", "anthropic:claude-3-5-haiku-20241022"]
+LLM_MODELS = ["openai:gpt-4o-mini", "anthropic:claude-3-5-haiku-20241022"]
+# TEMPS = [0.0, 0.7] # deterministic + diverse
+TEMPS = [0.7] # deterministic + diverse
+K = 3 # candidates per (model, temp)
 
 # weights for fused value calculation
 WEIGHTS = {"lev": 0.15, "tok_jacc": 0.15, "ast": 0.25, "sem": 0.45}
@@ -41,6 +46,9 @@ def extract_code_requirements(samples):
 
     # array to store occured errors for future adjustments 
     errors = []
+
+    # array for storing samples with no requirements extracted
+    empty = []
 
     # array for storing snippet_id and their labels
     result = []
@@ -80,8 +88,13 @@ def extract_code_requirements(samples):
             # update result array and counter
             result.append({"snippet_id": requirements.snippet_id, "label": label})
             count += 1
+        else:
+            # keep track of samples with no requirements extracted
+            empty.append(sample["task_name"])
 
+    # print summary of process
     print(f"Finished processing {len(samples)} samples with {len(errors)} errors.")
+    print(f"Samples with no requirements extracted: {len(empty)}")
     print(f"Total spec files created: {count}")
     
     # return array of ids for codes successfully analyzed along with their labels
@@ -126,9 +139,21 @@ def calculate_fused_values(snippet_ids):
         # update array to include max_fused value
         snippet_ids[i]["max_fused"] = max_fused
 
+def create_csv_dataset(data):
+    # ensure dataset folder exists
+    os.makedirs(DATASET_FOLDER, exist_ok=True)
+
+    # create csv file path
+    csv_path = os.path.join(DATASET_FOLDER, "code_fused_dataset.csv")
+
+    # create dataframe and save as csv
+    df = pd.DataFrame(data)
+    df.to_csv(csv_path, index=False)
+    print(f"CSV dataset created at {csv_path}")
+
 def main():
     # get code samples from dataset
-    number_of_samples = 10
+    number_of_samples = 200  # set to None to load all samples
     code_samples = load_samples_from_dataset(number_of_samples)
 
     # extract code requirements from dataset code samples and save as spec files
@@ -141,9 +166,8 @@ def main():
     # calculate max fused value for analyzed codes and add to existing array
     calculate_fused_values(snippet_ids)
 
-    # print final results
-    print("Final results:")
-    print(snippet_ids)
+    # create csv dataset from final results
+    create_csv_dataset(snippet_ids)
 
 if __name__ == "__main__":
     main()
