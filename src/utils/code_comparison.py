@@ -4,15 +4,35 @@ from typing import List
 from sentence_transformers import SentenceTransformer
 _model = SentenceTransformer("microsoft/codebert-base")
 
+def normalize_indentation(code: str, spaces_per_tab: int = 4):
+    # Replace tabs with spaces to avoid mixed indentation errors.
+    return code.replace("\t", " " * spaces_per_tab)
+
 # Tokenize Python code into tokens
 def tokenize_py(code: str):
     toks=[]
+    
+    # normalize indentation before tokenizing
+    code = normalize_indentation(code)
+
+    # create a token generator
+    readline = io.StringIO(code).readline
+    g = tokenize.generate_tokens(readline)
+    
     # loop through code tokens
-    for tok in tokenize.generate_tokens(io.StringIO(code).readline):
-        # only keep names, numbers, strings, and operators
-        if tok.type in (tokenize.NAME, tokenize.NUMBER, tokenize.STRING, tokenize.OP):
-            # append token string to list
-            toks.append(tok.string)
+    while True:
+        try:
+            tok = next(g)
+            # only keep names, numbers, strings, and operators
+            if tok.type in (tokenize.NAME, tokenize.NUMBER, tokenize.STRING, tokenize.OP):
+                toks.append(tok.string)
+        except StopIteration:
+            break  # no more tokens
+        except (IndentationError, tokenize.TokenError) as e:
+            # skip the bad token and keep going
+            print("Skipping bad token:", e)
+            continue
+
     return toks
 
 # calculate levenshtein similarity between two strings
