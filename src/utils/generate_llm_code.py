@@ -5,6 +5,7 @@ import openai
 from anthropic import Anthropic
 import google.generativeai as genai
 from src.utils.code_requirements_extraction import Spec
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def build_prompt(spec: Spec):
     # reqs array for filling the prompt template
@@ -140,4 +141,59 @@ def gen_candidates(spec: Spec, models: List[str], candidates_folder: str, cache_
 
                 # sleep to avoid rate limit
                 time.sleep(0.2)
+    return outs
+
+def gen_candidates_with_thread_pool(spec: Spec, models: List[str], candidates_folder: str, cache_folder: str, temps=[0.0,0.7], k=2):
+    # make candidates and cache dirs
+    os.makedirs(candidates_folder, exist_ok=True)
+    os.makedirs(cache_folder, exist_ok=True)
+
+    # cache path
+    cache_path = f"{cache_folder}/{spec.snippet_id}.jsonl"
+
+    # seen contains keys of already used model,temp,k combos
+    seen = set()
+
+    # out contains list of output file paths
+    outs = []
+
+    # function to call llm and save code
+    def call_and_save(m, t, i):
+        # construct unique key of model,temp,k combo
+        key = f"{m}:{t}:{i}"
+
+        # if already seen, skip
+        if key in seen: return None
+
+        # call llm and get output code
+        raw = call_llm(m, build_prompt(spec), temperature=t)
+        code = extract_code(raw or "")
+
+        # consruct unique filename
+        fname = f"{candidates_folder}/{spec.snippet_id}__{m}__t{t}__k{i}.py"
+
+        # save code and info
+        with open(fname, "w") as f: f.write(code)
+        with open(cache_path, "a") as f: f.write(json.dumps({"key":key,"path":fname})+"\n")
+
+        # add to seen
+        seen.add(key)
+
+        return fname
+
+    # use ThreadPoolExecutor to parallelize calls
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
+        for m in models:
+            for t in temps:
+                for i in range(k):
+                    futures.append(executor.submit(call_and_save, m, t, i))
+
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                outs.append(result)
+                # sleep to avoid rate limit
+                time.sleep(0.2)
+
     return outs

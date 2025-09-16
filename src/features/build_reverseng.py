@@ -4,7 +4,7 @@ import os, json
 import pandas as pd
 from datasets import load_dataset
 from src.utils.code_requirements_extraction import analyze_source, save_spec, Spec
-from src.utils.generate_llm_code import gen_candidates
+from src.utils.generate_llm_code import gen_candidates_with_thread_pool
 from src.utils.code_comparison import compare_against_candidates
 
 DATASET_NAME = "serafeimdossas/ai-code-detection"
@@ -115,7 +115,7 @@ def generate_ai_code():
         spec = Spec(**spec_data)
 
         # generate candidates for current spec file
-        gen_candidates(spec, LLM_MODELS, CANDIDATES_FOLDER, CACHE_FOLDER, TEMPS, K)
+        gen_candidates_with_thread_pool(spec, LLM_MODELS, CANDIDATES_FOLDER, CACHE_FOLDER, TEMPS, K)
 
 def calculate_fused_values(snippet_ids):
     # parse array
